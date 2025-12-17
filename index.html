@@ -1,0 +1,2282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FX Journal Pro</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            bg: '#09090b', // Zinc 950
+                            card: '#18181b', // Zinc 900
+                            border: '#27272a', // Zinc 800
+                            sidebar: '#18181b',
+                        },
+                        light: {
+                            bg: '#f4f4f5', // Zinc 100
+                            card: '#ffffff',
+                            border: '#e4e4e7', // Zinc 200
+                            sidebar: '#ffffff',
+                        },
+                        accent: '#3b82f6', // Blue 500
+                        success: '#10b981',
+                        danger: '#ef4444'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Custom scrollbar */
+        .scroller::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        .scroller::-webkit-scrollbar-thumb {
+            background-color: #52525b;
+            border-radius: 2px;
+        }
+
+        .scroller::-webkit-scrollbar-track {
+            background-color: transparent;
+        }
+
+        .calendar-day {
+            transition: all 0.2s ease;
+        }
+
+        .tooltip {
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+            width: 12rem;
+        }
+
+        .calendar-day:hover .tooltip {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        @keyframes gradient-xy {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .gradient-animated {
+            background-size: 200% 200%;
+            animation: gradient-xy 3s ease infinite;
+        }
+
+        /* Light Mode Gold Gradient */
+        .best-day-light {
+            background-image: linear-gradient(to bottom right, #fcd34d, #f59e0b, #fbbf24);
+            color: #78350f;
+            /* Dark amber text */
+            border-color: #f59e0b;
+        }
+
+        /* Dark Mode Gold Gradient */
+        .best-day-dark {
+            background-image: linear-gradient(to bottom right, #b45309, #d97706, #92400e);
+            color: #fffbeb;
+            /* Light amber text */
+            border-color: #d97706;
+        }
+    </style>
+
+    <style>
+        /* 
+       Single Animation Definition.
+       We rotate a "blob" shape. The irregular border-radius
+       creates the rising and falling wave effect as it spins.
+    */
+        @keyframes liquid-spin {
+            from {
+                transform: translate(-50%, -96%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -96%) rotate(360deg);
+            }
+        }
+
+        .liquid-container {
+            overflow: hidden;
+            position: relative;
+            transform: translateZ(0);
+            -webkit-mask-image: -webkit-radial-gradient(white, black);
+        }
+
+        .liquid-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            min-height: 12px;
+        }
+
+        .liquid-fill::before,
+        .liquid-fill::after {
+            content: "";
+            position: absolute;
+            width: 500%;
+            /* Increased slightly for smoother curvature */
+            padding-bottom: 500%;
+            top: 0;
+            left: 50%;
+            z-index: 20;
+        }
+
+        /* FRONT WAVE */
+        .liquid-fill::before {
+            /* 
+           Organic Shape:
+           Instead of a perfect circle or square, we vary the corners.
+           This removes the mechanical feel.
+        */
+            border-radius: 45% 40% 43% 38%;
+
+            background-color: var(--liquid-bg);
+            opacity: 1;
+
+            /* 6s duration */
+            animation: liquid-spin 6s linear infinite;
+        }
+
+        /* BACK WAVE (Shadow/Depth) */
+        .liquid-fill::after {
+            /* 
+           Different Organic Shape:
+           Ensures the back wave doesn't perfectly match the front.
+        */
+            border-radius: 40% 45% 38% 42%;
+
+            background-color: var(--liquid-bg);
+            opacity: 0.6;
+
+            /* 
+           Natural Physics Trick:
+           1. Duration is 9s (different from front wave).
+           2. 'reverse' direction makes the waves crash against each other
+              slightly, creating a turbulence effect rather than them 
+              spinning in unison.
+        */
+            animation: liquid-spin 9s linear infinite reverse;
+        }
+    </style>
+</head>
+
+<body x-data="tradeApp()" x-init="initApp()"
+    :class="darkMode ? 'bg-dark-bg text-zinc-300' : 'bg-light-bg text-zinc-700'"
+    class="antialiased h-screen w-full flex overflow-hidden font-sans">
+
+    <aside
+        class="hidden md:flex flex-col border-r transition-[width] duration-300 ease-in-out z-40 relative overflow-hidden"
+        :class="[
+        sidebarExpanded ? 'w-64' : 'w-[4.5rem]',
+        darkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'
+    ]">
+
+        <div class="h-14 flex items-center shrink-0 border-b transition-all duration-300" :class="[
+             darkMode ? 'border-zinc-800' : 'border-zinc-100', 
+             sidebarExpanded ? 'px-4 gap-3 justify-start' : 'px-0 justify-center'
+         ]">
+
+            <div
+                class="w-8 h-8 min-w-[2rem] bg-accent text-white flex items-center justify-center rounded-lg font-bold text-sm shadow-md shadow-accent/20">
+                FX
+            </div>
+
+            <h1 x-show="sidebarExpanded" x-transition:enter="transition ease-out duration-200 delay-100"
+                x-transition:enter-start="opacity-0 translate-x-2" x-transition:enter-end="opacity-100 translate-x-0"
+                class="text-base font-bold tracking-tight whitespace-nowrap overflow-hidden"
+                :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                Journal<span class="text-accent">Pro</span>
+            </h1>
+        </div>
+
+        <nav class="flex-1 py-4 px-2 flex flex-col gap-1 overflow-y-auto overflow-x-hidden scroller">
+            <template x-for="item in navItems" :key="item.id">
+                <button @click="activeTab = item.id"
+                    class="w-full flex items-center h-10 rounded-md transition-all duration-200 group relative" :class="[
+                    activeTab === item.id ? 'bg-accent text-white shadow-sm' : (darkMode ? 'text-zinc-400 hover:bg-zinc-800/50 hover:text-zinc-100' : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'),
+                    sidebarExpanded ? 'px-3 justify-start' : 'px-0 justify-center'
+                ]">
+
+                    <div class="w-5 h-5 min-w-[1.25rem] flex items-center justify-center transition-colors">
+                        <span x-html="item.icon"></span>
+                    </div>
+
+                    <span x-show="sidebarExpanded" x-transition:enter="transition ease-out duration-200 delay-100"
+                        x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+                        class="ml-3 text-sm font-medium whitespace-nowrap" x-text="item.label">
+                    </span>
+
+                    <div x-show="!sidebarExpanded"
+                        class="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-2 py-1 bg-zinc-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 whitespace-nowrap shadow-xl">
+                        <span x-text="item.label"></span>
+                        <div
+                            class="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-zinc-900">
+                        </div>
+                    </div>
+                </button>
+            </template>
+        </nav>
+
+        <div class="px-2 pb-2 shrink-0">
+
+            <div x-show="sidebarExpanded" x-transition:enter="transition ease-out duration-200"
+                x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                class="rounded-lg p-3 border overflow-hidden"
+                :class="darkMode ? 'bg-zinc-800/30 border-zinc-800' : 'bg-zinc-50 border-zinc-100'">
+
+                <div class="text-[10px] uppercase tracking-wider font-semibold mb-2"
+                    :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'">
+                    Quick Actions
+                </div>
+
+                <div class="space-y-1.5">
+                    <template
+                        x-for="sc in [{k: '⇧D', l: 'Dashboard'}, {k: '⇧J', l: 'Journal'}, {k: '⇧C', l: 'Calendar'}, {k: '⇧S', l: 'Settings'}]">
+                        <div class="flex items-center justify-between text-xs group/key">
+                            <span class="truncate" :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'"
+                                x-text="sc.l"></span>
+                            <kbd class="h-5 min-w-[1.5rem] px-1 inline-flex items-center justify-center font-sans text-[10px] font-medium rounded border-b-2 transition-all"
+                                :class="darkMode ? 'bg-zinc-800 text-zinc-300 border-zinc-900 group-hover/key:border-zinc-700' : 'bg-white text-zinc-500 border-zinc-200 group-hover/key:border-zinc-300'"
+                                x-text="sc.k">
+                            </kbd>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div x-show="!sidebarExpanded" class="flex justify-center py-2 group relative">
+                <div class="w-8 h-8 flex items-center justify-center rounded-md transition-colors cursor-help"
+                    :class="darkMode ? 'text-zinc-600 hover:bg-zinc-800 hover:text-zinc-300' : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600'">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="4" width="20" height="16" rx="2" ry="2"></rect>
+                        <line x1="6" y1="8" x2="6" y2="8"></line>
+                        <line x1="10" y1="8" x2="10" y2="8"></line>
+                        <line x1="14" y1="8" x2="14" y2="8"></line>
+                        <line x1="18" y1="8" x2="18" y2="8"></line>
+                        <line x1="6" y1="12" x2="6" y2="12"></line>
+                        <line x1="10" y1="12" x2="10" y2="12"></line>
+                        <line x1="14" y1="12" x2="14" y2="12"></line>
+                        <line x1="18" y1="12" x2="18" y2="12"></line>
+                        <line x1="6" y1="16" x2="18" y2="16"></line>
+                    </svg>
+                </div>
+
+                <div
+                    class="absolute left-full top-1/2 -translate-y-1/2 ml-3 px-3 py-2 bg-zinc-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50 min-w-[120px] shadow-xl">
+                    <div class="font-semibold mb-1 border-b border-zinc-700 pb-1">Hotkeys</div>
+                    <div class="grid grid-cols-[1fr,auto] gap-x-3 gap-y-1">
+                        <span>Dash</span> <span class="text-zinc-400">⇧D</span>
+                        <span>Journal</span> <span class="text-zinc-400">⇧J</span>
+                        <span>Cal</span> <span class="text-zinc-400">⇧C</span>
+                        <span>Set</span> <span class="text-zinc-400">⇧S</span>
+                    </div>
+                    <div
+                        class="absolute left-0 top-1/2 -translate-x-1 -translate-y-1/2 border-4 border-transparent border-r-zinc-900">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-2 border-t shrink-0" :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+            <button @click="sidebarExpanded = !sidebarExpanded"
+                class="w-full flex items-center justify-center h-8 rounded-md transition-colors group"
+                :class="darkMode ? 'hover:bg-zinc-800 text-zinc-500 hover:text-zinc-300' : 'hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600'">
+
+                <svg class="w-5 h-5 transition-transform duration-300" :class="!sidebarExpanded ? 'rotate-180' : ''"
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT WRAPPER -->
+    <div class="flex-1 flex flex-col h-full overflow-hidden relative">
+
+        <!-- Minimal Top Nav -->
+        <header :class="darkMode ? 'bg-dark-card/80 border-dark-border' : 'bg-light-card/80 border-light-border'"
+            class="h-16 border-b flex justify-between items-center px-6 sticky top-0 z-30 backdrop-blur-md">
+
+            <div class="md:hidden flex items-center gap-2">
+                <div class="w-8 h-8 bg-accent text-white flex items-center justify-center rounded-lg font-bold">FX</div>
+            </div>
+
+            <div class="hidden md:flex items-center gap-4">
+                <h2 class="text-sm font-bold uppercase tracking-wider text-zinc-500"
+                    x-text="navItems.find(i => i.id === activeTab).label"></h2>
+            </div>
+
+            <div class="flex items-center gap-4 ml-auto">
+
+                <div class="relative" x-data="{ 
+        calcOpen: false, 
+        balance: 10000,
+        pairType: 'standard', // 'standard' or 'jpy'
+        pairName: 'EURUSD',
+        entry: 1.08500,
+        stopLoss: 1.08300,
+        takeProfit: 1.08900,
+        riskPercent: 1.0,
+
+        // Computed Risk Amount
+        get riskAmount() {
+            return (this.balance * (this.riskPercent / 100)).toFixed(2);
+        },
+        
+        // Dynamic Pip Multiplier based on Manual Toggle
+        get pipMultiplier() {
+            return this.pairType === 'jpy' ? 100 : 10000;
+        },
+
+        // Calculate Pips Distance
+        getPips(p1, p2) {
+            let diff = Math.abs(p1 - p2);
+            return (diff * this.pipMultiplier).toFixed(1);
+        },
+
+        // Main Lot Size Calculation
+        get finalLotSize() {
+            let risk = parseFloat(this.riskAmount);
+            let distance = Math.abs(this.entry - this.stopLoss);
+            if (distance === 0 || isNaN(distance)) return '0.00';
+
+            let lot;
+            if (this.pairType === 'jpy') {
+                // JPY Formula: (Risk / Distance) / (100,000 / Entry)
+                lot = (risk / distance) / (100000 / this.entry);
+            } else {
+                // Standard Formula: (Risk / Distance) / 100,000
+                lot = (risk / distance) / 100000;
+            }
+            return Math.max(0, lot).toFixed(2);
+        }
+     }">
+
+                    <button @click="calcOpen = !calcOpen"
+                        class="flex items-center justify-center w-8 h-8 rounded-full transition hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        :class="darkMode ? 'text-zinc-400 hover:text-white' : 'text-zinc-500 hover:text-zinc-900'">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                            <line x1="8" y1="6" x2="16" y2="6"></line>
+                            <line x1="16" y1="14" x2="16" y2="14"></line>
+                            <line x1="12" y1="14" x2="12" y2="14"></line>
+                            <line x1="8" y1="14" x2="8" y2="14"></line>
+                            <line x1="16" y1="18" x2="16" y2="18"></line>
+                            <line x1="12" y1="18" x2="12" y2="18"></line>
+                            <line x1="8" y1="18" x2="8" y2="18"></line>
+                        </svg>
+                    </button>
+
+                    <div x-show="calcOpen" @click.outside="calcOpen = false"
+                        x-transition:enter="transition ease-out duration-200"
+                        class="absolute right-0 top-12 mt-2 w-[340px] rounded-2xl border shadow-2xl z-50 overflow-hidden"
+                        :class="darkMode ? 'bg-dark-card border-zinc-700 shadow-black/50' : 'bg-white border-zinc-200 shadow-zinc-200/50'">
+
+                        <div class="flex p-1 m-4 rounded-xl bg-zinc-100 dark:bg-zinc-800"
+                            x-data="{ types: ['standard', 'jpy'] }">
+                            <template x-for="t in types">
+                                <button @click="pairType = t"
+                                    class="flex-1 py-1.5 text-[10px] font-bold uppercase transition-all rounded-lg"
+                                    :class="pairType === t ? 'bg-white dark:bg-zinc-700 shadow-sm text-accent' : 'text-zinc-500'"
+                                    x-text="t === 'standard' ? 'Forex (Majors)' : 'JPY Pairs'">
+                                </button>
+                            </template>
+                        </div>
+
+                        <div class="px-4 pb-6 space-y-3">
+                            <div class="text-center py-2">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase">Account Balance</span>
+                                <div class="flex items-center justify-center text-2xl font-bold"
+                                    :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                                    <span class="mr-1">$</span>
+                                    <input type="number" x-model="balance"
+                                        class="w-32 bg-transparent text-center focus:outline-none border-b border-dashed border-zinc-500">
+                                </div>
+                            </div>
+
+                            <div class="border rounded-xl p-3 flex justify-between items-center"
+                                :class="darkMode ? 'border-zinc-700 bg-zinc-800/30' : 'border-zinc-200 bg-white'">
+                                <div class="flex flex-col">
+                                    <span class="text-[10px] font-bold text-zinc-400 uppercase">Entry Price</span>
+                                    <input x-model="entry" type="number" step="any"
+                                        class="w-full bg-transparent font-mono font-medium text-lg focus:outline-none"
+                                        :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                                </div>
+                            </div>
+
+                            <div class="border rounded-xl p-3 flex justify-between items-center"
+                                :class="darkMode ? 'border-zinc-700 bg-zinc-800/30' : 'border-zinc-200 bg-white'">
+                                <div class="flex flex-col">
+                                    <span class="text-[10px] font-bold text-zinc-400 uppercase">Stop Loss</span>
+                                    <input x-model="stopLoss" type="number" step="any"
+                                        class="w-full bg-transparent font-mono font-medium text-lg focus:outline-none"
+                                        :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs font-bold text-zinc-500"><span
+                                            x-text="getPips(entry, stopLoss)"></span> Pips</div>
+                                </div>
+                            </div>
+
+                            <div class="border rounded-xl p-3"
+                                :class="darkMode ? 'border-zinc-700 bg-zinc-800/30' : 'border-zinc-200 bg-white'">
+                                <span class="text-[10px] font-bold text-zinc-400 uppercase">Risk</span>
+                                <div class="flex justify-between items-end">
+                                    <div class="flex items-center gap-1">
+                                        <input x-model="riskPercent" type="number" step="0.1"
+                                            class="w-12 bg-transparent font-mono font-medium text-lg focus:outline-none"
+                                            :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                                        <span class="text-sm text-zinc-500">%</span>
+                                    </div>
+                                    <span class="text-sm font-bold text-zinc-400">$ <span
+                                            x-text="riskAmount"></span></span>
+                                </div>
+                            </div>
+
+                            <div class="mt-4 rounded-xl border p-4 bg-accent/5 border-accent/20">
+                                <span class="text-[10px] font-bold text-accent uppercase">Calculated Lot Size</span>
+                                <div class="text-4xl font-mono font-black text-accent mt-1" x-text="finalLotSize"></div>
+                                <div class="text-[9px] text-zinc-500 mt-1 uppercase tracking-tighter">
+                                    Based on 1:100,000 Standard Lot Contract
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative" x-data="{ accDropdownOpen: false }">
+                    <button @click="accDropdownOpen = !accDropdownOpen"
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-bold transition hover:opacity-80"
+                        :class="darkMode ? 'border-zinc-700 bg-zinc-800/50 text-zinc-200' : 'border-zinc-200 bg-zinc-50 text-zinc-700'">
+                        <span class="w-2 h-2 rounded-full bg-success"></span>
+                        <span x-text="activeAccount.name"></span>
+                        <svg class="w-3 h-3 text-zinc-500 ml-1 transition-transform"
+                            :class="accDropdownOpen ? 'rotate-180' : ''" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+
+                    <div x-show="accDropdownOpen" @click.outside="accDropdownOpen = false"
+                        x-transition:enter="transition ease-out duration-100"
+                        x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                        x-transition:leave="transition ease-in duration-75"
+                        x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+                        class="absolute right-0 mt-2 w-60 rounded-xl border shadow-xl z-50 overflow-hidden"
+                        :class="darkMode ? 'bg-dark-card border-zinc-800' : 'bg-white border-zinc-200'">
+
+                        <div class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-zinc-500 border-b"
+                            :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">Switch Account</div>
+
+                        <div class="max-h-60 overflow-y-auto scroller py-1">
+                            <template x-for="acc in accounts" :key="acc.id">
+                                <button @click="switchAccount(acc.id); accDropdownOpen = false"
+                                    class="w-full text-left px-4 py-2 text-xs flex items-center justify-between group transition"
+                                    :class="currentAccountId === acc.id ? (darkMode ? 'bg-accent/10 text-accent' : 'bg-blue-50 text-accent') : (darkMode ? 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200' : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900')">
+                                    <div class="flex items-center gap-2 overflow-hidden">
+                                        <div class="w-1.5 h-1.5 rounded-full"
+                                            :class="currentAccountId === acc.id ? 'bg-accent' : 'bg-zinc-400'"></div>
+                                        <span class="font-bold truncate" x-text="acc.name"></span>
+                                    </div>
+                                    <span x-show="currentAccountId === acc.id"
+                                        class="text-[10px] opacity-70">Active</span>
+                                </button>
+                            </template>
+                        </div>
+
+                        <div class="border-t p-1" :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+                            <button @click="activeTab = 'settings'; accDropdownOpen = false"
+                                class="w-full flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg transition"
+                                :class="darkMode ? 'text-zinc-400 hover:bg-zinc-800 hover:text-white' : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900'">
+                                <div class="w-5 h-5 rounded border flex items-center justify-center"
+                                    :class="darkMode ? 'border-zinc-700 bg-zinc-800' : 'border-zinc-300 bg-white'">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 4v16m8-8H4"></path>
+                                    </svg>
+                                </div>
+                                Add New Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <button @click="toggleTheme()"
+                    class="p-2 rounded-full hover:bg-zinc-200 dark:hover:bg-zinc-800 transition">
+                    <svg x-show="!darkMode" class="w-5 h-5 text-zinc-600" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <svg x-show="darkMode" class="w-5 h-5 text-zinc-300" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Scroll Area -->
+        <main class="flex-1 overflow-y-auto p-4 md:p-6 w-full relative scroller">
+            <div class="max-w-7xl mx-auto w-full space-y-6 pb-24 md:pb-6">
+
+                <!-- DASHBOARD -->
+                <section x-show="activeTab === 'dashboard'" x-transition.opacity.duration.300ms class="space-y-6">
+
+                    <!-- KPI Cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <template x-for="(stat, index) in dashboardStats" :key="index">
+                            <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                                class="group relative p-4 rounded-xl border shadow-sm flex flex-col justify-between h-24 overflow-hidden transition-all duration-300 hover:border-accent/50">
+
+                                <!-- Label -->
+                                <p class="text-[10px] uppercase font-bold tracking-widest text-zinc-500 z-10"
+                                    x-text="stat.label"></p>
+
+                                <!-- Value -->
+                                <p class="text-2xl font-bold truncate z-10"
+                                    :class="stat.colorClass || (darkMode ? 'text-white' : 'text-zinc-900')"
+                                    x-text="stat.value">
+                                </p>
+
+                                <!-- Win Rate Visual Bar (Only renders if label is 'Win Rate') -->
+                                <template x-if="stat.label === 'Win Rate'">
+                                    <div
+                                        class="absolute right-0 top-0 bottom-0 w-1.5 h-full flex flex-col bg-zinc-200 dark:bg-zinc-800 border-l dark:border-zinc-800">
+                                        <!-- Red / Loss Portion (Top) -->
+                                        <!-- We calculate height as (100 - value) -->
+                                        <div class="w-full bg-rose-500/80 transition-all duration-1000 ease-out"
+                                            :style="`height: ${100 - parseFloat(stat.value || 0)}%`">
+                                        </div>
+
+                                        <!-- Green / Win Portion (Bottom) -->
+                                        <!-- We calculate height as value -->
+                                        <div class="w-full bg-emerald-500 transition-all duration-1000 ease-out"
+                                            :style="`height: ${parseFloat(stat.value || 0)}%`">
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <!-- Subtle background glow for Win Rate card -->
+                                <template x-if="stat.label === 'Win Rate'">
+                                    <div class="absolute inset-0 pointer-events-none opacity-10"
+                                        :class="parseFloat(stat.value) >= 50 ? 'bg-gradient-to-br from-emerald-500 to-transparent' : 'bg-gradient-to-br from-rose-500 to-transparent'">
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Equity Chart -->
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="p-6 rounded-xl border shadow-sm col-span-2 flex flex-col max-h-[350px] ">
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-sm font-bold" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">
+                                    Account
+                                    Growth</h3>
+                                <div class="flex items-center gap-2 text-xs">
+                                    <span class="w-2 h-2 rounded-full bg-accent"></span>
+                                    <span class="text-zinc-500">Cumulative PnL%</span>
+                                </div>
+                            </div>
+                            <div class="relative flex-1 w-full h-64">
+                                <template x-if="trades.length > 0">
+                                    <svg class="w-full h-full block" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                                        <defs>
+                                            <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
+                                                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"></stop>
+                                                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"></stop>
+                                            </linearGradient>
+                                        </defs>
+                                        <line x1="0" y1="500" x2="1000" y2="500" stroke="currentColor"
+                                            stroke-opacity="0.1" stroke-dasharray="4" />
+                                        <line x1="0" y1="0" x2="1000" y2="0" stroke="currentColor"
+                                            stroke-opacity="0.1" />
+                                        <line x1="0" y1="1000" x2="1000" y2="1000" stroke="currentColor"
+                                            stroke-opacity="0.1" />
+                                        <path :d="equityChartData.area" fill="url(#chartGradient)" stroke="none" />
+                                        <path :d="equityChartData.path" fill="none" stroke="#3b82f6" stroke-width="3"
+                                            vector-effect="non-scaling-stroke" class="drop-shadow-lg" />
+                                    </svg>
+                                </template>
+                                <div x-show="trades.length === 0"
+                                    class="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">
+                                    No trades logged yet
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Trade Type Bar Chart -->
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="p-6 rounded-xl border shadow-sm flex flex-col">
+
+                            <h3 class="text-sm font-bold mb-6" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">
+                                Distribution
+                            </h3>
+
+                            <div class="flex-1 flex items-end justify-center gap-6 px-2">
+                                <template x-for="type in ['scalp', 'day', 'swing']" :key="type">
+                                    <div class="flex flex-col items-center gap-3 group w-full h-full justify-end">
+
+                                        <!-- Percentage Label -->
+                                        <span class="text-xs font-mono font-bold z-10 transition-all duration-300"
+                                            :class="darkMode ? 'text-zinc-400' : 'text-zinc-600'"
+                                            x-text="getTypePercentage(type) + '%'"></span>
+
+                                        <!-- The Track (Container) -->
+                                        <!-- We pass the background color as a CSS variable (--liquid-bg) so the mask knows what color to be -->
+                                        <div class="w-full rounded-2xl relative h-full shadow-inner liquid-container"
+                                            :class="darkMode ? 'bg-zinc-800' : 'bg-zinc-100'"
+                                            :style="darkMode ? '--liquid-bg: #27272a' : '--liquid-bg: #f4f4f5'">
+
+                                            <!-- The Liquid (Colored Bar) -->
+                                            <div class="liquid-fill w-full transition-all duration-1000 ease-in-out"
+                                                :class="{
+                            'bg-gradient-to-t from-blue-600 to-blue-400': type === 'scalp',
+                            'bg-gradient-to-t from-emerald-600 to-emerald-400': type === 'day',
+                            'bg-gradient-to-t from-amber-600 to-amber-400': type === 'swing'
+                        }" :style="`height: ${getTypePercentage(type)}%`">
+                                            </div>
+
+                                        </div>
+
+                                        <!-- Label -->
+                                        <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider"
+                                            x-text="type"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Bars -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="p-6 rounded-xl border shadow-sm">
+                            <h3 class="text-sm font-bold mb-4" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">Top
+                                Win
+                                Factors</h3>
+                            <div class="space-y-3">
+                                <template x-for="item in getBarData('win', 'profitConfluences')" :key="item.label">
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span x-text="item.label"></span>
+                                            <span x-text="item.count"></span>
+                                        </div>
+                                        <div
+                                            class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2 overflow-hidden">
+                                            <div class="bg-success h-2 rounded-full" :style="`width: ${item.pct}%`">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="!trades.some(t=>t.outcome==='win')" class="text-xs text-zinc-500 italic">No
+                                    winning
+                                    trades yet.</div>
+                            </div>
+                        </div>
+
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="p-6 rounded-xl border shadow-sm">
+                            <h3 class="text-sm font-bold mb-4" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">Top
+                                Loss
+                                Reasons</h3>
+                            <div class="space-y-3">
+                                <template x-for="item in getBarData('loss', 'lossReasons')" :key="item.label">
+                                    <div>
+                                        <div class="flex justify-between text-xs mb-1">
+                                            <span x-text="item.label"></span>
+                                            <span x-text="item.count"></span>
+                                        </div>
+                                        <div
+                                            class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2 overflow-hidden">
+                                            <div class="bg-danger h-2 rounded-full" :style="`width: ${item.pct}%`">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div x-show="!trades.some(t=>t.outcome==='loss')" class="text-xs text-zinc-500 italic">
+                                    No losing
+                                    trades yet.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NEW SECTION: Performance Summary -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                        <!-- Profitable Trades -->
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="p-6 rounded-xl border shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-4 opacity-10">
+                                <svg class="w-24 h-24 text-success" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11.586 11l2.293-2.293H12z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <h3 class="text-sm font-bold mb-4 text-success">Profitable Trades</h3>
+                            <div class="space-y-4 relative z-10">
+                                <div>
+                                    <p class="text-xs text-zinc-500 uppercase tracking-wider">Count</p>
+                                    <p class="text-2xl font-bold" x-text="detailedStats.win.count"></p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <p class="text-[10px] text-zinc-500 uppercase">Avg Win</p>
+                                        <p class="text-sm font-mono font-bold text-success"
+                                            x-text="detailedStats.win.avg"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-zinc-500 uppercase">Best Trade</p>
+                                        <p class="text-sm font-mono font-bold text-success"
+                                            x-text="detailedStats.win.best"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Loss Trades -->
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="p-6 rounded-xl border shadow-sm relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-4 opacity-10">
+                                <svg class="w-24 h-24 text-danger" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd"
+                                        d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z"
+                                        clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <h3 class="text-sm font-bold mb-4 text-danger">Loss Trades</h3>
+                            <div class="space-y-4 relative z-10">
+                                <div>
+                                    <p class="text-xs text-zinc-500 uppercase tracking-wider">Count</p>
+                                    <p class="text-2xl font-bold" x-text="detailedStats.loss.count"></p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <p class="text-[10px] text-zinc-500 uppercase">Avg Loss</p>
+                                        <p class="text-sm font-mono font-bold text-danger"
+                                            x-text="detailedStats.loss.avg"></p>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] text-zinc-500 uppercase">Worst Trade</p>
+                                        <p class="text-sm font-mono font-bold text-danger"
+                                            x-text="detailedStats.loss.worst">
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeframe Chart (Improved UI) -->
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="p-6 rounded-xl border shadow-sm flex flex-col">
+                            <div class="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 class="text-sm font-bold" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">
+                                        Most
+                                        Used Timeframes</h3>
+                                </div>
+                                <div class="flex items-center gap-3 text-xs">
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                                        <span class="text-zinc-500">Intraday</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        <span class="text-zinc-500">Short</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                                        <span class="text-zinc-500">Long</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex-1 flex items-end justify-between gap-2 h-40">
+                                <template x-for="tf in timeframeData" :key="tf.label">
+                                    <div class="flex flex-col items-center gap-2 group w-full h-full justify-end relative"
+                                        :title="tf.label + ' — ' + tf.count + ' trades'">
+                                        <!-- Top badge showing count & percent -->
+                                        <div class="absolute -top-3 text-[10px] font-semibold px-2 py-0.5 rounded-full z-10"
+                                            :class="darkMode ? 'bg-black/60 text-zinc-200' : 'bg-white/90 text-zinc-800 shadow'">
+                                            <span x-text="tf.count"></span>
+                                            <span class="text-zinc-400"> / </span>
+                                            <span x-text="Math.round(tf.pct) + '%'"></span>
+                                        </div>
+
+                                        <!-- Bar container -->
+                                        <div class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-t-md relative overflow-hidden transition-all duration-500 ease-out flex items-end"
+                                            :style="`height: ${Math.max(tf.pct, 5)}%`">
+                                            <!-- colored fill -->
+                                            <div class="w-full h-full transition-transform duration-700" :class="{
+                                                    'bg-gradient-to-t from-blue-600 to-blue-300': ['M1','M5','M15','1H'].includes(tf.label),
+                                                    'bg-gradient-to-t from-emerald-600 to-emerald-300': tf.label === '4H',
+                                                    'bg-gradient-to-t from-amber-600 to-amber-300': tf.label === 'D1'
+                                                }" style="border-radius: 0.375rem 0.375rem 0 0;">
+                                            </div>
+                                        </div>
+
+                                        <!-- Label -->
+                                        <span class="text-[10px] font-bold text-zinc-500 mt-1"
+                                            :class="darkMode ? 'text-zinc-400' : 'text-zinc-600'"
+                                            x-text="tf.label"></span>
+
+                                        <!-- hover detail panel -->
+                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-[11px] shadow-2xl border z-50 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto"
+                                            :class="darkMode ? 'bg-zinc-950 border-zinc-800 text-zinc-200' : 'bg-white border-zinc-100 text-zinc-800'">
+                                            <div class="font-semibold" x-text="tf.label"></div>
+                                            <div class="text-zinc-500 text-xs">Trades: <span x-text="tf.count"></span>
+                                            </div>
+                                            <div class="text-zinc-500 text-xs">Relative: <span
+                                                    x-text="Math.round(tf.pct) + '%'"></span></div>
+                                        </div>
+                                    </div>
+                                </template>
+
+                                <div x-show="timeframeData.length === 0"
+                                    class="w-full text-center text-xs text-zinc-500 italic mt-8">No data</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- NEW: Extended Metrics Grid -->
+                    <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                        class="p-6 rounded-xl border shadow-sm">
+                        <h3 class="text-lg font-bold mb-6 flex items-center gap-2"
+                            :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                            <svg class="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                            </svg>
+                            Advanced Analytics
+                        </h3>
+
+                        <template x-if="trades.length === 0">
+                            <div class="text-center text-zinc-500 py-8 text-sm italic">Log some trades to see advanced
+                                metrics.
+                            </div>
+                        </template>
+
+                        <template x-if="trades.length > 0">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <template x-for="stat in extendedStats" :key="stat.label">
+                                    <div class="p-4 rounded-lg border transition hover:border-accent/30"
+                                        :class="darkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-200'">
+                                        <p class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1"
+                                            x-text="stat.label"></p>
+                                        <p class="text-xl font-bold font-mono"
+                                            :class="stat.class || (darkMode ? 'text-zinc-200' : 'text-zinc-800')"
+                                            x-text="stat.value"></p>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </section>
+
+                <!-- JOURNAL -->
+                <section x-show="activeTab === 'journal'" x-transition.opacity.duration.300ms
+                    class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="xl:col-span-1">
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="p-6 rounded-xl border shadow-sm sticky top-0">
+                            <h2 class="text-base font-bold mb-6 flex items-center justify-between"
+                                :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                                <span x-text="isEditing ? 'Edit Entry' : 'New Trade Entry'"></span>
+                                <button x-show="isEditing" @click="resetForm()"
+                                    class="text-xs text-danger hover:underline">Cancel</button>
+                            </h2>
+                            <form @submit.prevent="saveTrade()" class="space-y-5">
+                                <!-- Instrument -->
+                                <div class="space-y-1">
+                                    <label
+                                        class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Pair</label>
+                                    <div class="relative col-span-2" x-data="{
+        search: '',
+        open: false,
+        allPairs: [
+            'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
+            'EURGBP', 'EURAUD', 'EURNZD', 'EURCAD', 'EURCHF', 'EURJPY',
+            'GBPAUD', 'GBPNZD', 'GBPCAD', 'GBPCHF', 'GBPJPY',
+            'AUDNZD', 'AUDCAD', 'AUDCHF', 'AUDJPY',
+            'NZDCAD', 'NZDCHF', 'NZDJPY',
+            'CADCHF', 'CADJPY', 'CHFJPY',
+            'XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL', 'NGAS',
+            'US30', 'NAS100', 'SPX500', 'GER30', 'FRA40', 'UK100', 'JP225',
+            'BTCUSD', 'ETHUSD', 'BNBUSD', 'XRPUSD', 'ADAUSD', 'SOLUSD', 'DOGEUSD',
+            'DOTUSD', 'MATICUSD', 'LTCUSD', 'TRXUSD', 'SHIBUSD', 'AVAXUSD',
+            'LINKUSD', 'UNIUSD', 'ATOMUSD', 'XLMUSD', 'XMRUSD', 'ETCUSD', 'BCHUSD',
+            'ALGOUSD', 'FILUSD', 'VETUSD', 'ICPUSD', 'MANAUSD', 'SANDUSD', 'AXSUSD',
+            'NEARUSD', 'EOSUSD', 'AAVEUSD', 'THETAUSD', 'XTZUSD', 'FTMUSD',
+            'GRTUSD', 'KSMUSD', 'NEOUSD', 'MKRUSD', 'RUNEUSD', 'CAKEUSD', 'LUNA2USD',
+            'ZECUSD', 'MIOTAUSD', 'ENJUSD', 'DASHUSD', 'BATUSD', 'STXUSD',
+            'COMPUSD', 'ZILUSD', 'WAVESUSD', 'RVNUSD', 'KAVAUSD', 'LRCUSD',
+            'USDSGD', 'USDHKD', 'USDTRY', 'USDZAR', 'USDMXN', 'USDNOK', 'USDSEK'
+        ],
+        get filteredPairs() {
+            if (this.search === '') return [];
+            return this.allPairs.filter(pair =>
+                pair.toLowerCase().includes(this.search.toLowerCase())
+            );
+        },
+        selectPair(pair) {
+            this.form.pair = pair;
+            this.search = pair;
+            this.open = false;
+        },
+        init() {
+            // If form.pair already has a value (editing), sync search
+            if(this.form.pair) this.search = this.form.pair;
+        }
+     }" @click.away="open = false">
+
+                                        <input type="text" x-model="search"
+                                            @input="form.pair = search.toUpperCase(); open = true" @focus="open = true"
+                                            placeholder="Type pair (e.g. EURUSD, BTC...)" :class="inputClass"
+                                            class="w-full uppercase font-bold text-accent" autocomplete="off">
+
+                                        <div x-show="open && filteredPairs.length > 0"
+                                            x-transition:enter="transition ease-out duration-100"
+                                            x-transition:enter-start="transform opacity-0 scale-95"
+                                            x-transition:enter-end="transform opacity-100 scale-100"
+                                            class="absolute z-50 w-full mt-1 bg-black dark:bg-gray-800 border border-zinc-900 dark:border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
+                                            <ul>
+                                                <template x-for="pair in filteredPairs" :key="pair">
+                                                    <li @click="selectPair(pair)"
+                                                        class="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium uppercase transition-colors duration- text-white">
+                                                        <span x-text="pair"></span>
+                                                    </li>
+                                                </template>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Date & TF -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Date</label>
+                                        <input type="date" x-model="form.date" :class="inputClass" required>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Timeframe</label>
+                                        <select x-model="form.timeframe" :class="inputClass">
+                                            <option>M1</option>
+                                            <option>M5</option>
+                                            <option>M15</option>
+                                            <option>1H</option>
+                                            <option>4H</option>
+                                            <option>D1</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- Metrics -->
+                                <div class="grid grid-cols-3 gap-3">
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Risk
+                                            %</label>
+                                        <input type="number" step="0.01" x-model.number="form.risk" :class="inputClass"
+                                            placeholder="1.0" required>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">RR</label>
+                                        <input type="number" step="0.01" x-model.number="form.rr" :class="inputClass"
+                                            placeholder="2.0" required>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <label
+                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Style</label>
+                                        <select x-model="form.tradeType" :class="inputClass" required>
+                                            <option value="day">Day</option>
+                                            <option value="scalp">Scalp</option>
+                                            <option value="swing">Swing</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <!-- Outcome -->
+                                <div class="space-y-1">
+                                    <label
+                                        class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Result</label>
+                                    <div class="flex rounded-md overflow-hidden border"
+                                        :class="darkMode ? 'border-zinc-700' : 'border-zinc-300'">
+                                        <button type="button" @click="form.outcome='win'; form.reasons=[]"
+                                            class="flex-1 py-2 text-xs font-bold transition"
+                                            :class="form.outcome==='win' ? 'bg-success text-black' : (darkMode ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')">WIN</button>
+                                        <button type="button" @click="form.outcome='loss'; form.reasons=[]"
+                                            class="flex-1 py-2 text-xs font-bold transition border-l border-r"
+                                            :class="[darkMode ? 'border-zinc-700' : 'border-zinc-300', form.outcome==='loss' ? 'bg-danger text-white' : (darkMode ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')]">LOSS</button>
+                                        <button type="button" @click="form.outcome='be'; form.reasons=[]"
+                                            class="flex-1 py-2 text-xs font-bold transition"
+                                            :class="form.outcome==='be' ? 'bg-zinc-500 text-white' : (darkMode ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')">BE</button>
+                                    </div>
+                                </div>
+                                <!-- Reasons -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between items-end mb-2">
+                                        <label class="text-[10px] font-bold uppercase tracking-widest text-zinc-500"
+                                            x-text="form.outcome === 'win' ? 'Confluences' : 'Mistakes/Reasons'"></label>
+                                        <button type="button" @click="activeTab = 'settings'"
+                                            class="text-[10px] text-accent hover:underline">Manage Tags</button>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2">
+                                        <template
+                                            x-for="item in (form.outcome === 'win' ? activeAccount.config.profitConfluences : activeAccount.config.lossReasons)"
+                                            :key="item">
+                                            <button type="button" @click="toggleReason(item)"
+                                                class="px-3 py-1 text-xs rounded-full border transition select-none"
+                                                :class="form.reasons.includes(item) ? 'bg-accent border-accent text-white' : (darkMode ? 'bg-zinc-900 border-zinc-700 text-zinc-400' : 'bg-white border-zinc-200 text-zinc-600')"><span
+                                                    x-text="item"></span></button>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <label
+                                        class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Notes</label>
+                                    <textarea x-model="form.notes" rows="2" :class="inputClass"
+                                        placeholder="Details..."></textarea>
+                                </div>
+                                <button type="submit"
+                                    class="w-full bg-accent hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-500/20 transition transform active:scale-95">
+                                    <span x-text="isEditing ? 'Save Changes' : 'Log Trade'"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <div class="xl:col-span-2 flex flex-col h-full">
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="rounded-xl border shadow-sm flex-1 flex flex-col overflow-hidden">
+                            <div class="p-4 border-b flex justify-between items-center"
+                                :class="darkMode ? 'border-zinc-800' : 'border-zinc-200'">
+                                <h3 class="font-bold text-sm" :class="darkMode ? 'text-white' : 'text-zinc-900'">Trade
+                                    Log</h3>
+                                <span class="text-xs font-mono text-zinc-500"
+                                    x-text="trades.length + ' entries'"></span>
+                            </div>
+                            <div class="overflow-auto scroller flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead class="sticky top-0 z-10 text-[10px] font-bold uppercase tracking-widest"
+                                        :class="darkMode ? 'bg-black text-zinc-500' : 'bg-zinc-50 text-zinc-500'">
+                                        <tr>
+                                            <th class="p-4">Date</th>
+                                            <th class="p-4">Pair</th>
+                                            <th class="p-4">TF</th>
+                                            <th class="p-4">Type</th>
+                                            <th class="p-4">Result</th>
+                                            <th class="p-4 text-right">PnL</th>
+                                            <th class="p-4 text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y text-sm"
+                                        :class="darkMode ? 'divide-zinc-800' : 'divide-zinc-100'">
+                                        <template x-for="trade in sortedTrades" :key="trade.id">
+                                            <tr class="group transition"
+                                                :class="darkMode ? 'hover:bg-zinc-800/50' : 'hover:bg-zinc-50'">
+                                                <td class="p-4 whitespace-nowrap text-zinc-500 text-xs"
+                                                    x-text="trade.date">
+                                                </td>
+                                                <td class="p-4 font-bold text-xs"
+                                                    :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'"
+                                                    x-text="trade.pair">
+                                                </td>
+                                                <td class="p-4 text-zinc-500 text-xs" x-text="trade.timeframe"></td>
+                                                <td class="p-4 text-zinc-500 capitalize text-xs"
+                                                    x-text="trade.tradeType"></td>
+                                                <td class="p-4">
+                                                    <span
+                                                        class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border"
+                                                        :class="{
+                                                            'bg-success/10 text-success border-success/20': trade.outcome === 'win',
+                                                            'bg-danger/10 text-danger border-danger/20': trade.outcome === 'loss',
+                                                            'bg-zinc-500/10 text-zinc-500 border-zinc-500/20': trade.outcome === 'be'
+                                                        }" x-text="trade.outcome">
+                                                    </span>
+                                                </td>
+                                                <td class="p-4 text-right font-mono font-bold text-xs"
+                                                    :class="getPnL(trade) >= 0 ? 'text-success' : 'text-danger'"
+                                                    x-text="(getPnL(trade) > 0 ? '+' : '') + getPnL(trade).toFixed(2) + '%'">
+                                                </td>
+                                                <td
+                                                    class="p-4 text-center flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
+                                                    <button @click="editTrade(trade)"
+                                                        class="text-accent hover:text-white p-1 rounded hover:bg-accent"><svg
+                                                            class="w-3 h-3" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                                            </path>
+                                                        </svg></button>
+                                                    <button @click="deleteTrade(trade.id)"
+                                                        class="text-zinc-500 hover:text-white p-1 rounded hover:bg-danger"><svg
+                                                            class="w-3 h-3" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                            </path>
+                                                        </svg></button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CALENDAR -->
+                <section x-show="activeTab === 'calendar'" x-transition.opacity.duration.300ms>
+                    <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                        class="rounded-xl border shadow-sm p-6">
+
+                        <!-- Header Section -->
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+                            <!-- Title & Monthly PnL -->
+                            <div class="flex items-center gap-6">
+                                <div>
+                                    <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-zinc-900'"
+                                        x-text="calendarMonthLabel"></h2>
+                                    <p class="text-xs text-zinc-500">Performance Overview</p>
+                                </div>
+
+                                <!-- NEW: Total Monthly PnL Display -->
+                                <div class="px-4 py-2 rounded-lg border flex flex-col items-center"
+                                    :class="darkMode ? 'bg-zinc-800/50 border-zinc-700' : 'bg-zinc-50 border-zinc-200'">
+                                    <span class="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">Est.
+                                        Total PnL</span>
+                                    <span class="text-lg font-mono font-bold"
+                                        x-data="{ total: calendarGrid.filter(x => x.isCurrentMonth).reduce((acc, curr) => acc + (curr.pnl || 0), 0) }"
+                                        :class="total >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                        x-text="(total > 0 ? '+' : '') + total.toFixed(2) + '%'">
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Controls -->
+                            <div class="flex items-center space-x-1.5 bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded-xl border"
+                                :class="darkMode ? 'border-zinc-700' : 'border-zinc-200'">
+
+                                <button @click="changeMonth(-1)"
+                                    class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 dark:focus:ring-offset-zinc-800">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 19l-7-7 7-7"></path>
+                                    </svg>
+                                </button>
+
+                                <button @click="currentMonth = new Date()"
+                                    class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition 
+                       bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 
+                       hover:bg-accent hover:text-white dark:hover:bg-accent focus:outline-none focus:ring-2 focus:ring-accent">
+                                    Today
+                                </button>
+
+                                <button @click="changeMonth(1)"
+                                    class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 dark:focus:ring-offset-zinc-800">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 5l7 7-7 7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Calendar Grid -->
+                        <div class="grid grid-cols-7 gap-px rounded-xl border relative z-0"
+                            :class="darkMode ? 'bg-zinc-800 border-zinc-800' : 'bg-zinc-200 border-zinc-200'">
+                            <!-- Headers -->
+                            <template x-for="dayName in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
+                                :key="dayName">
+                                <div class="p-3 text-center text-[10px] font-bold uppercase tracking-widest first:rounded-tl-xl last:rounded-tr-xl"
+                                    :class="darkMode ? 'bg-black text-zinc-500' : 'bg-zinc-50 text-zinc-500'"
+                                    x-text="dayName">
+                                </div>
+                            </template>
+
+                            <!-- Days -->
+                            <template x-for="(item, index) in calendarGrid" :key="item.key">
+                                <div class="min-h-[100px] p-2 flex flex-col justify-between relative group calendar-day transition-colors duration-200"
+                                    :class="[
+                    /* Base Shapes & Borders */
+                    'border-b border-r',
+                    darkMode ? 'border-zinc-800' : 'border-zinc-200',
+                    
+                    /* 1. NOT Current Month: Fade out */
+                    !item.isCurrentMonth ? (darkMode ? 'bg-zinc-900/50 opacity-40' : 'bg-zinc-100 opacity-60') : '',
+
+                    /* 2. BEST MONTH/DAY (Gold Gradient Animation) overrides standard colors */
+                    (item.pnl === maxMonthlyPnl && item.pnl > 0) 
+                        ? (darkMode ? 'best-day-dark gradient-animated shadow-inner font-bold' : 'best-day-light gradient-animated shadow-inner font-bold')
+                        : (
+                            /* 3. Standard Heatmap Logic */
+                            item.hasTrades ? getDayColorClass(item) : (darkMode ? 'bg-dark-card hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')
+                        ),
+                    
+                    /* 4. TODAY (Only if no trades, otherwise color overrides) */
+                    isToday(item.dateStr) && !item.hasTrades ? (darkMode ? 'ring-1 ring-inset ring-white/20' : 'bg-blue-50') : ''
+                ]">
+
+                                    <!-- Date Number -->
+                                    <div class="flex justify-between items-start">
+                                        <span class="text-xs font-medium" :class="[
+                            /* Text Contrast Logic: Force specific color if it's the best day, otherwise standard logic */
+                            (item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : (item.hasTrades ? getTextContrastColor(item) : (darkMode ? 'text-zinc-500' : 'text-zinc-400')),
+                            isToday(item.dateStr) && !item.hasTrades ? 'text-accent font-bold' : ''
+                        ]" x-text="item.dayNum"></span>
+
+                                        <!-- Medal Icon for Best Day -->
+                                        <template x-if="item.pnl === maxMonthlyPnl && item.pnl > 0">
+                                            <span class="text-[10px] scale-125">🏆</span>
+                                        </template>
+                                    </div>
+
+                                    <!-- PnL Display -->
+                                    <template x-if="item.hasTrades">
+                                        <div class="text-right mt-auto">
+                                            <div class="font-bold text-sm"
+                                                :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
+                                                x-text="(item.pnl > 0 ? '+' : '') + item.pnl.toFixed(1) + '%'"></div>
+                                            <div class="text-[10px] opacity-80"
+                                                :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
+                                                x-text="item.count + ' trades'"></div>
+                                        </div>
+                                    </template>
+
+                                    <!-- Tooltip -->
+                                    <div class="tooltip absolute bottom-full mb-2 rounded-lg shadow-xl border p-3 z-[9999] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-48"
+                                        :class="[
+                        darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200',
+                        (index % 7 === 0 || index % 7 === 1) ? 'left-0 origin-bottom-left' : 
+                        (index % 7 === 5 || index % 7 === 6) ? 'right-0 origin-bottom-right' : 
+                        'left-1/2 -translate-x-1/2 origin-bottom'
+                    ]" x-show="item.hasTrades">
+                                        <div class="text-xs font-bold mb-2 border-b pb-1 flex justify-between"
+                                            :class="darkMode ? 'text-white border-zinc-800' : 'text-black border-zinc-100'">
+                                            <span x-text="item.dateStr"></span>
+                                            <span :class="item.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                                x-text="(item.pnl>0?'+':'') + item.pnl.toFixed(1) + '%'"></span>
+                                        </div>
+                                        <!-- Trades List inside tooltip -->
+                                        <div class="space-y-1 max-h-32 overflow-y-auto">
+                                            <template x-for="t in getTradesForDate(item.dateStr)" :key="t.id">
+                                                <div class="flex justify-between text-[10px] items-center">
+                                                    <span class="font-bold"
+                                                        :class="darkMode ? 'text-zinc-400' : 'text-zinc-600'"
+                                                        x-text="t.pair"></span>
+                                                    <span class="font-mono"
+                                                        :class="getPnL(t) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                                        x-text="(getPnL(t)>0?'+':'') + getPnL(t).toFixed(1) + '%'"></span>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SETTINGS -->
+                <section x-show="activeTab === 'settings'" x-transition.opacity.duration.300ms class="space-y-6">
+
+                    <!-- Account Management -->
+                    <div :class="darkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'"
+                        class="rounded-2xl border shadow-sm overflow-hidden transition-colors duration-300">
+                        <!-- Header -->
+                        <div class="p-6 border-b" :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 rounded-lg"
+                                        :class="darkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'">
+                                        <!-- Users Icon -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path
+                                                d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="text-base font-bold"
+                                            :class="darkMode ? 'text-white' : 'text-zinc-900'">Account Management</h3>
+                                        <p class="text-xs" :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">Manage
+                                            your sub-accounts and portfolios</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded-full font-medium"
+                                    :class="darkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-100 text-zinc-600'"
+                                    x-text="accounts.length + ' Accounts'"></span>
+                            </div>
+                        </div>
+
+                        <div class="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                            <!-- Column 1: Existing Accounts List -->
+                            <div class="order-2 lg:order-1">
+                                <h4 class="text-xs font-semibold uppercase tracking-wider mb-3"
+                                    :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'">Your Accounts</h4>
+
+                                <div class="space-y-2 max-h-[240px] overflow-y-auto pr-2 custom-scrollbar">
+                                    <template x-for="acc in accounts" :key="acc.id">
+                                        <div @click="acc.id !== currentAccountId ? switchAccount(acc.id) : null"
+                                            class="group relative flex items-center justify-between p-3 rounded-xl border transition-all duration-200 cursor-pointer"
+                                            :class="[
+                            acc.id === currentAccountId 
+                                ? (darkMode ? 'border-blue-500/50 bg-blue-500/10 shadow-[0_0_15px_rgba(59,130,246,0.1)]' : 'border-blue-500 bg-blue-50 shadow-sm') 
+                                : (darkMode ? 'border-zinc-800 bg-zinc-800/50 hover:border-zinc-700 hover:bg-zinc-800' : 'border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50')
+                        ]">
+                                            <div class="flex items-center gap-3">
+                                                <!-- Status Icon -->
+                                                <div class="flex items-center justify-center w-8 h-8 rounded-full transition-colors"
+                                                    :class="acc.id === currentAccountId ? 'bg-blue-500 text-white' : (darkMode ? 'bg-zinc-700 text-zinc-500' : 'bg-zinc-200 text-zinc-400')">
+                                                    <template x-if="acc.id === currentAccountId">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                                                            viewBox="0 0 20 20" fill="currentColor">
+                                                            <path fill-rule="evenodd"
+                                                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                                                clip-rule="evenodd" />
+                                                        </svg>
+                                                    </template>
+                                                    <template x-if="acc.id !== currentAccountId">
+                                                        <span class="text-xs font-bold"
+                                                            x-text="acc.name.charAt(0)"></span>
+                                                    </template>
+                                                </div>
+
+                                                <div class="flex flex-col">
+                                                    <span class="text-sm font-semibold"
+                                                        :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'"
+                                                        x-text="acc.name"></span>
+                                                    <span class="text-[10px] font-medium"
+                                                        :class="darkMode ? 'text-zinc-500' : 'text-zinc-500'"
+                                                        x-text="acc.trades.length + ' Trades recorded'"></span>
+                                                </div>
+                                            </div>
+
+                                            <!-- Actions -->
+                                            <div class="flex items-center gap-1">
+                                                <!-- Only show 'Active' label if active -->
+                                                <span x-show="acc.id === currentAccountId"
+                                                    class="text-[10px] font-bold uppercase tracking-wide mr-2"
+                                                    :class="darkMode ? 'text-blue-400' : 'text-blue-600'">Active</span>
+
+                                                <!-- Delete Button (Hover reveal) -->
+                                                <button @click.stop="deleteAccount(acc.id)" x-show="accounts.length > 1"
+                                                    class="p-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 hover:bg-red-500/10 hover:text-red-500"
+                                                    :class="darkMode ? 'text-zinc-600' : 'text-zinc-400'"
+                                                    title="Delete Account">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
+                                                        viewBox="0 0 20 20" fill="currentColor">
+                                                        <path fill-rule="evenodd"
+                                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 000-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                                            clip-rule="evenodd" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <!-- Column 2: Create New -->
+                            <div class="order-1 lg:order-2">
+                                <div class="p-5 rounded-xl border border-dashed flex flex-col justify-center h-full"
+                                    :class="darkMode ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-50 border-zinc-300'">
+                                    <div class="mb-4">
+                                        <h4 class="text-sm font-bold"
+                                            :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">Create Portfolio</h4>
+                                        <p class="text-xs mt-1 leading-relaxed"
+                                            :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
+                                            Separate your strategies (e.g., Scalping, Swing) by creating distinct
+                                            sub-accounts.
+                                        </p>
+                                    </div>
+
+                                    <div class="relative flex items-center">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg class="h-4 w-4 text-zinc-400" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                                            </svg>
+                                        </div>
+                                        <input type="text" x-model="newAccountName" @keyup.enter="createAccount()"
+                                            class="w-full pl-10 pr-20 py-2.5 rounded-lg text-sm border focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none"
+                                            :class="darkMode ? 'bg-zinc-900 border-zinc-700 text-white placeholder-zinc-500' : 'bg-white border-zinc-300 text-zinc-900 placeholder-zinc-400'"
+                                            placeholder="e.g. Crypto Longs">
+                                        <button @click="createAccount()"
+                                            class="absolute right-1 top-1 bottom-1 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-md text-xs font-bold transition-colors flex items-center gap-1">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20"
+                                                fill="currentColor">
+                                                <path fill-rule="evenodd"
+                                                    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                                    clip-rule="evenodd" />
+                                            </svg>
+                                            Add
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+                    <div class="space-y-6">
+
+                        <!-- TAG MANAGEMENT GRID -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                            <!-- Winning Tags (Green Theme) -->
+                            <div :class="darkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'"
+                                class="flex flex-col p-6 rounded-2xl border shadow-sm transition-colors duration-300 h-full">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="p-2 rounded-lg"
+                                        :class="darkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'">
+                                        <!-- Trending Up Icon -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-sm"
+                                            :class="darkMode ? 'text-white' : 'text-zinc-900'">Winning Confluences</h3>
+                                        <p class="text-xs" :class="darkMode ? 'text-zinc-500' : 'text-zinc-500'">What
+                                            works for this account?</p>
+                                    </div>
+                                </div>
+
+                                <!-- Input Group -->
+                                <div class="relative mb-4">
+                                    <input type="text" x-model="newConfluence"
+                                        @keyup.enter="addConfig('profitConfluences', newConfluence); newConfluence=''"
+                                        class="w-full pl-4 pr-12 py-2.5 rounded-xl text-sm border outline-none transition-all"
+                                        :class="darkMode ? 'bg-zinc-800/50 border-zinc-700 text-white focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50' : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500'"
+                                        placeholder="Add tag (e.g. 200 EMA support)">
+                                    <button @click="addConfig('profitConfluences', newConfluence); newConfluence=''"
+                                        class="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-lg text-xs font-bold transition-colors"
+                                        :class="darkMode ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'">
+                                        +
+                                    </button>
+                                </div>
+
+                                <!-- Tags List -->
+                                <div class="flex flex-wrap gap-2 content-start">
+                                    <template x-for="(item, index) in activeAccount.config.profitConfluences"
+                                        :key="index">
+                                        <div class="group flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                                            :class="darkMode ? 'bg-emerald-900/20 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'">
+                                            <span x-text="item"></span>
+                                            <button @click="removeConfig('profitConfluences', index)"
+                                                class="p-0.5 rounded-full hover:bg-emerald-500/20 opacity-60 group-hover:opacity-100 transition-all">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <div x-show="activeAccount.config.profitConfluences.length === 0"
+                                        class="w-full text-center py-4 border border-dashed rounded-lg"
+                                        :class="darkMode ? 'border-zinc-800 text-zinc-600' : 'border-zinc-200 text-zinc-400'">
+                                        <span class="text-xs">No tags added yet</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Loss Tags (Red Theme) -->
+                            <div :class="darkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'"
+                                class="flex flex-col p-6 rounded-2xl border shadow-sm transition-colors duration-300 h-full">
+                                <div class="flex items-center gap-3 mb-4">
+                                    <div class="p-2 rounded-lg"
+                                        :class="darkMode ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-50 text-rose-600'">
+                                        <!-- Alert/Down Icon -->
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                            fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                clip-rule="evenodd" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-bold text-sm"
+                                            :class="darkMode ? 'text-white' : 'text-zinc-900'">Loss Reasons</h3>
+                                        <p class="text-xs" :class="darkMode ? 'text-zinc-500' : 'text-zinc-500'">Common
+                                            mistakes to track?</p>
+                                    </div>
+                                </div>
+
+                                <!-- Input Group -->
+                                <div class="relative mb-4">
+                                    <input type="text" x-model="newReason"
+                                        @keyup.enter="addConfig('lossReasons', newReason); newReason=''"
+                                        class="w-full pl-4 pr-12 py-2.5 rounded-xl text-sm border outline-none transition-all"
+                                        :class="darkMode ? 'bg-zinc-800/50 border-zinc-700 text-white focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/50' : 'bg-zinc-50 border-zinc-200 text-zinc-900 focus:bg-white focus:border-rose-500 focus:ring-1 focus:ring-rose-500'"
+                                        placeholder="Add tag (e.g. FOMO)">
+                                    <button @click="addConfig('lossReasons', newReason); newReason=''"
+                                        class="absolute right-1.5 top-1.5 bottom-1.5 px-3 rounded-lg text-xs font-bold transition-colors"
+                                        :class="darkMode ? 'bg-rose-500/20 text-rose-400 hover:bg-rose-500/30' : 'bg-rose-100 text-rose-700 hover:bg-rose-200'">
+                                        +
+                                    </button>
+                                </div>
+
+                                <!-- Tags List -->
+                                <div class="flex flex-wrap gap-2 content-start">
+                                    <template x-for="(item, index) in activeAccount.config.lossReasons" :key="index">
+                                        <div class="group flex items-center gap-1.5 pl-3 pr-2 py-1.5 rounded-full text-xs font-medium border transition-colors"
+                                            :class="darkMode ? 'bg-rose-900/20 border-rose-500/20 text-rose-400' : 'bg-rose-50 border-rose-200 text-rose-700'">
+                                            <span x-text="item"></span>
+                                            <button @click="removeConfig('lossReasons', index)"
+                                                class="p-0.5 rounded-full hover:bg-rose-500/20 opacity-60 group-hover:opacity-100 transition-all">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </template>
+                                    <div x-show="activeAccount.config.lossReasons.length === 0"
+                                        class="w-full text-center py-4 border border-dashed rounded-lg"
+                                        :class="darkMode ? 'border-zinc-800 text-zinc-600' : 'border-zinc-200 text-zinc-400'">
+                                        <span class="text-xs">No tags added yet</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- DATA MANAGEMENT BAR -->
+                        <div :class="darkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'"
+                            class="p-6 rounded-2xl border shadow-sm flex flex-col md:flex-row items-center justify-between gap-6 transition-colors duration-300">
+
+                            <div class="flex items-center gap-4">
+                                <div class="hidden md:flex p-3 rounded-full"
+                                    :class="darkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-100 text-zinc-500'">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                                    </svg>
+                                </div>
+                                <div class="text-center md:text-left">
+                                    <h3 class="font-bold text-sm" :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                                        Data Management</h3>
+                                    <p class="text-xs mt-1" :class="darkMode ? 'text-zinc-500' : 'text-zinc-500'">Export
+                                        your journal as JSON or restore a backup.</p>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-wrap justify-center gap-3">
+                                <!-- Import -->
+                                <label
+                                    class="cursor-pointer px-4 py-2 rounded-lg text-xs font-bold border transition-all duration-200 flex items-center gap-2"
+                                    :class="darkMode ? 'border-zinc-700 hover:border-zinc-500 text-zinc-300 hover:text-white hover:bg-zinc-800' : 'border-zinc-200 hover:border-zinc-300 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-50'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4v12"></path>
+                                    </svg>
+                                    <span>Import</span>
+                                    <input type="file" class="hidden" accept=".json" @change="importData($event)">
+                                </label>
+
+                                <!-- Export -->
+                                <button @click="exportData()"
+                                    class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-all duration-200 flex items-center gap-2 shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                    </svg>
+                                    Export Data
+                                </button>
+
+                                <!-- Vertical Separator -->
+                                <div class="w-px h-8 mx-1" :class="darkMode ? 'bg-zinc-800' : 'bg-zinc-200'"></div>
+
+                                <!-- Reset -->
+                                <button
+                                    @click="if(confirm('Are you sure? This will delete ALL data locally. This cannot be undone.')) { localStorage.clear(); location.reload(); }"
+                                    class="px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
+                                    :class="darkMode ? 'text-zinc-500 hover:bg-red-500/10 hover:text-red-500' : 'text-zinc-400 hover:bg-red-50 hover:text-red-600'">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                        </path>
+                                    </svg>
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MINIMIZABLE BOTTOM BAR (MOBILE ONLY) -->
+    <div x-cloak class="fixed bottom-0 left-0 right-0 z-50 flex flex-col items-center pointer-events-none md:hidden">
+
+        <!-- Toggle Button -->
+        <button @click="bottomBarOpen = !bottomBarOpen"
+            class="pointer-events-auto mb-2 p-2 rounded-full shadow-lg border backdrop-blur-md transition transform hover:scale-110"
+            :class="darkMode ? 'bg-zinc-900/80 border-zinc-700 text-zinc-300' : 'bg-white/80 border-zinc-200 text-zinc-700'">
+            <svg x-show="!bottomBarOpen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+            </svg>
+            <svg x-show="bottomBarOpen" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+        </button>
+
+        <!-- Main Bar -->
+        <div x-show="bottomBarOpen" x-transition:enter="transition ease-out duration-200"
+            x-transition:enter-start="translate-y-full opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
+            x-transition:leave="transition ease-in duration-150" x-transition:leave-start="translate-y-0 opacity-100"
+            x-transition:leave-end="translate-y-full opacity-0"
+            class="pointer-events-auto w-full max-w-[730px] mx-auto rounded-t-xl border-t border-x shadow-2xl backdrop-blur-xl p-4 flex flex-col gap-4"
+            :class="darkMode ? 'bg-black/90 border-zinc-800' : 'bg-white/90 border-zinc-200'">
+
+            <!-- Pages Nav -->
+            <div class="flex justify-center gap-2">
+                <template x-for="item in navItems" :key="item.id">
+                    <button @click="activeTab = item.id"
+                        :class="activeTab === item.id ? 'bg-accent text-white shadow-lg shadow-blue-500/30' : (darkMode ? 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700' : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200')"
+                        class="px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2">
+                        <!-- <span x-html="item.icon" class="w-3 h-3"></span> -->
+                        <span x-text="item.label"></span>
+                    </button>
+                </template>
+            </div>
+
+            <!-- Account Switcher -->
+            <div class="flex items-center justify-center gap-2 border-t pt-4"
+                :class="darkMode ? 'border-zinc-800' : 'border-zinc-200'">
+                <span class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Account:</span>
+                <div class="flex gap-2 overflow-x-auto scroller pb-1">
+                    <template x-for="acc in accounts" :key="acc.id">
+                        <button @click="switchAccount(acc.id)"
+                            :class="currentAccountId === acc.id ? 'border-accent text-accent' : (darkMode ? 'border-zinc-700 text-zinc-400 hover:border-zinc-500' : 'border-zinc-300 text-zinc-600 hover:border-zinc-400')"
+                            class="px-3 py-1 rounded-full border text-xs font-bold whitespace-nowrap transition">
+                            <span x-text="acc.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tradeApp', () => ({
+                // --- State ---
+                darkMode: localStorage.getItem('theme') === 'dark',
+                activeTab: 'dashboard',
+                bottomBarOpen: true,
+                sidebarExpanded: false, // Default minimized
+
+                // Nav Items Data
+                navItems: [
+                    { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
+                    { id: 'journal', label: 'Journal', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>' },
+                    { id: 'calendar', label: 'Calendar', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>' },
+                    { id: 'settings', label: 'Settings', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' }
+                ],
+
+                // Multi-Account Data Structure
+                accounts: [],
+                currentAccountId: null,
+
+                // Default Config (Applied to new accounts)
+                defaultConfig: {
+                    profitConfluences: ['Liquidity Sweep', 'BOS', 'Trend Continuation', 'Fibonacci', 'Supply/Demand'],
+                    lossReasons: ['Early Entry', 'FOMO', 'Counter Trend', 'News Event', 'Overtrading']
+                },
+
+                // UI Form State
+                newAccountName: '',
+                tempPairSelect: '',
+                form: {
+                    id: null,
+                    date: new Date().toISOString().split('T')[0],
+                    pair: '',
+                    isCustomPair: false,
+                    rr: null,
+                    risk: null,
+                    outcome: 'win',
+                    timeframe: '1H',
+                    tradeType: 'day',
+                    reasons: [],
+                    notes: ''
+                },
+                isEditing: false,
+                newConfluence: '',
+                newReason: '',
+                currentMonth: new Date(),
+
+                // --- Initialization ---
+                initApp() {
+                    // 1. FIX: MANUALLY ACTIVATE SHORTCUTS LISTENER
+                    window.addEventListener('keydown', (e) => this.handleShortcuts(e));
+
+                    // Theme Check
+                    if (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        this.darkMode = true;
+                    }
+                    this.$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'));
+
+                    // Data Load
+                    const stored = localStorage.getItem('fxJournalData');
+                    if (stored) {
+                        try {
+                            const parsed = JSON.parse(stored);
+
+                            // MIGRATION CHECK: Convert old single-account format to multi-account
+                            if (parsed.trades && Array.isArray(parsed.trades) && !parsed.accounts) {
+                                const migratedAccount = {
+                                    id: crypto.randomUUID(),
+                                    name: 'Main Account',
+                                    trades: parsed.trades,
+                                    config: parsed.config || this.defaultConfig
+                                };
+                                this.accounts = [migratedAccount];
+                                this.currentAccountId = migratedAccount.id;
+                                console.log('Migrated legacy data to multi-account structure.');
+                            } else {
+                                // Load new structure
+                                this.accounts = parsed.accounts || [];
+                                this.currentAccountId = parsed.currentAccountId || (this.accounts.length ? this.accounts[0].id : null);
+                            }
+                        } catch (e) {
+                            console.error('Data load error', e);
+                        }
+                    }
+
+                    // Create default account if empty
+                    if (this.accounts.length === 0) {
+                        this.createAccount('Main Account');
+                    }
+
+                    // Auto-save watchers
+                    this.$watch('accounts', () => this.persist());
+                    this.$watch('currentAccountId', () => this.persist());
+                },
+
+                persist() {
+                    localStorage.setItem('fxJournalData', JSON.stringify({
+                        accounts: this.accounts,
+                        currentAccountId: this.currentAccountId
+                    }));
+                },
+
+                // --- Multi-Account Getters ---
+                get activeAccount() {
+                    return this.accounts.find(a => a.id === this.currentAccountId) || this.accounts[0];
+                },
+
+                get trades() {
+                    return this.activeAccount ? this.activeAccount.trades : [];
+                },
+
+                // --- Account Management ---
+                createAccount(name = null) {
+                    const finalName = name || this.newAccountName;
+                    if (!finalName.trim()) return;
+
+                    const newId = crypto.randomUUID();
+                    this.accounts.push({
+                        id: newId,
+                        name: finalName,
+                        trades: [],
+                        config: JSON.parse(JSON.stringify(this.defaultConfig))
+                    });
+
+                    this.currentAccountId = newId;
+                    this.newAccountName = '';
+                },
+
+                switchAccount(id) {
+                    this.currentAccountId = id;
+                    this.activeTab = 'dashboard';
+                    // Reset scroll on main container instead of window
+                    const scroller = document.querySelector('.scroller');
+                    if (scroller) scroller.scrollTop = 0;
+                },
+
+                deleteAccount(id) {
+                    if (this.accounts.length <= 1) return alert('Cannot delete the last account.');
+                    if (confirm('Delete this account and all its trades permanently?')) {
+                        const idx = this.accounts.findIndex(a => a.id === id);
+                        this.accounts.splice(idx, 1);
+                        if (this.currentAccountId === id) {
+                            this.currentAccountId = this.accounts[0].id;
+                        }
+                    }
+                },
+
+                // --- UI Logic ---
+                toggleTheme() { this.darkMode = !this.darkMode; },
+
+                get inputClass() {
+                    return this.darkMode
+                        ? 'w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-accent focus:outline-none placeholder-zinc-600 transition'
+                        : 'w-full bg-white border border-zinc-300 rounded-lg p-2.5 text-xs text-zinc-900 focus:border-accent focus:outline-none placeholder-zinc-400 transition';
+                },
+
+                handleShortcuts(e) {
+                    // Ignore if typing in inputs
+                    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+
+                    // Shift + Key combinations
+                    if (e.shiftKey) {
+                        switch (e.key.toLowerCase()) {
+                            case 'd': this.activeTab = 'dashboard'; break;
+                            case 'j': this.activeTab = 'journal'; break;
+                            case 'c': this.activeTab = 'calendar'; break;
+                            case 's': this.activeTab = 'settings'; break;
+                            case 'b': this.bottomBarOpen = !this.bottomBarOpen; break;
+                            case 'm': this.sidebarExpanded = !this.sidebarExpanded; break; // Shortcut for sidebar
+                        }
+                    }
+                },
+
+                // --- Form & Config Logic (Updated to use activeAccount) ---
+                addConfig(key, val) { if (val.trim()) this.activeAccount.config[key].push(val.trim()); console.log(this.activeAccount.config); },
+                removeConfig(key, idx) { this.activeAccount.config[key].splice(idx, 1); },
+
+                // --- Form Logic ---
+                handlePairChange(e) {
+                    const val = e.target.value;
+                    this.form.isCustomPair = (val === 'custom');
+                    this.form.pair = !this.form.isCustomPair ? val : '';
+                },
+
+                toggleReason(item) {
+                    if (this.form.reasons.includes(item)) this.form.reasons = this.form.reasons.filter(i => i !== item);
+                    else this.form.reasons.push(item);
+                },
+
+                resetForm() {
+                    this.isEditing = false;
+                    this.tempPairSelect = '';
+                    this.form = {
+                        id: null, date: new Date().toISOString().split('T')[0], pair: '', isCustomPair: false,
+                        rr: null, risk: null, outcome: 'win', timeframe: '1H', tradeType: 'day', reasons: [], notes: ''
+                    };
+                },
+
+                saveTrade() {
+                    if (!this.form.pair && !this.tempPairSelect) return alert('Select a pair');
+                    if (this.tempPairSelect === 'custom' && !this.form.pair.trim()) return alert('Enter pair name');
+
+                    const tradeData = JSON.parse(JSON.stringify(this.form));
+
+                    // Access trades via activeAccount
+                    const account = this.activeAccount;
+
+                    if (this.isEditing) {
+                        const index = account.trades.findIndex(t => t.id === this.form.id);
+                        if (index !== -1) account.trades[index] = tradeData;
+                    } else {
+                        tradeData.id = crypto.randomUUID();
+                        account.trades.push(tradeData);
+                    }
+                    this.resetForm();
+                    // Force reactivity update if needed
+                    this.accounts = [...this.accounts];
+                },
+
+                editTrade(trade) {
+                    this.form = JSON.parse(JSON.stringify(trade));
+                    this.isEditing = true;
+                    this.activeTab = 'journal';
+                    const knownPairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'US30', 'NAS100', 'BTCUSD'];
+                    this.form.isCustomPair = !knownPairs.includes(trade.pair);
+                    this.tempPairSelect = this.form.isCustomPair ? 'custom' : trade.pair;
+                    const scroller = document.querySelector('.scroller');
+                    if (scroller) scroller.scrollTop = 0;
+                },
+
+                deleteTrade(id) {
+                    if (confirm('Delete trade?')) {
+                        const account = this.activeAccount;
+                        account.trades = account.trades.filter(t => t.id !== id);
+                        this.accounts = [...this.accounts];
+                    }
+                },
+
+                // --- Analysis Helpers ---
+                getPnL(trade) {
+                    const risk = parseFloat(trade.risk) || 0;
+                    if (trade.outcome === 'loss') return -risk;
+                    if (trade.outcome === 'win') return risk * (parseFloat(trade.rr) || 0);
+                    return 0;
+                },
+
+                get sortedTrades() {
+                    return [...this.trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+                },
+
+                // --- Statistics (Merged from Script 1 & 2) ---
+                get dashboardStats() {
+                    const total = this.trades.length;
+                    const wins = this.trades.filter(t => t.outcome === 'win').length;
+                    const winRate = total ? ((wins / total) * 100).toFixed(1) : 0;
+                    const netPnL = this.trades.reduce((acc, t) => acc + this.getPnL(t), 0).toFixed(2);
+
+                    return [
+                        { label: 'Total Trades', value: total },
+                        { label: 'Win Rate', value: winRate + '%', colorClass: winRate >= 50 ? 'text-success' : 'text-danger' },
+                        { label: 'Net Profit', value: (netPnL > 0 ? '+' : '') + netPnL + '%', colorClass: netPnL >= 0 ? 'text-success' : 'text-danger' },
+                        { label: 'Avg Risk', value: (this.trades.reduce((a, t) => a + (t.risk || 0), 0) / (total || 1)).toFixed(2) + '%' },
+                        { label: 'Avg R:R', value: (this.trades.reduce((a, t) => a + (t.rr || 0), 0) / (total || 1)).toFixed(2) + 'R' },
+                    ];
+                },
+
+                // Detailed Stats (From Script 1)
+                get detailedStats() {
+                    const wins = this.trades.filter(t => t.outcome === 'win');
+                    const losses = this.trades.filter(t => t.outcome === 'loss');
+
+                    const avgWin = wins.length ? (wins.reduce((acc, t) => acc + this.getPnL(t), 0) / wins.length).toFixed(2) : '0.00';
+                    const avgLoss = losses.length ? (losses.reduce((acc, t) => acc + this.getPnL(t), 0) / losses.length).toFixed(2) : '0.00';
+
+                    const bestTrade = wins.length ? Math.max(...wins.map(t => this.getPnL(t))).toFixed(2) : '0.00';
+                    const worstTrade = losses.length ? Math.min(...losses.map(t => this.getPnL(t))).toFixed(2) : '0.00';
+
+                    return {
+                        win: { count: wins.length, avg: `+${avgWin}%`, best: `+${bestTrade}%` },
+                        loss: { count: losses.length, avg: `${avgLoss}%`, worst: `${worstTrade}%` }
+                    };
+                },
+
+                // Timeframe Distribution (From Script 1)
+                get timeframeData() {
+                    const counts = {};
+                    this.trades.forEach(t => {
+                        const tf = t.timeframe || 'UNK';
+                        counts[tf] = (counts[tf] || 0) + 1;
+                    });
+                    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                    const maxVal = sorted.length ? sorted[0][1] : 1;
+                    return sorted.map(([label, count]) => ({
+                        label, count, pct: (count / maxVal) * 100
+                    }));
+                },
+
+                // Extended Stats: Drawdown, EV, Streaks (From Script 1)
+                get extendedStats() {
+                    if (!this.trades.length) return null;
+
+                    const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    let wins = 0, losses = 0, bes = 0;
+                    let grossProfit = 0, grossLoss = 0, totalPnl = 0, totalR = 0;
+                    let currentStreak = 0, maxWinStreak = 0, maxLossStreak = 0;
+                    let streakCount = 0, prevOutcome = '';
+
+                    // Drawdown calc vars
+                    let peak = 0, maxDD = 0, currentEquity = 0;
+
+                    sorted.forEach(t => {
+                        const pnl = this.getPnL(t);
+                        totalPnl += pnl;
+                        if (t.risk > 0) totalR += (pnl / t.risk);
+
+                        if (t.outcome === 'win') {
+                            wins++;
+                            grossProfit += pnl;
+                        } else if (t.outcome === 'loss') {
+                            losses++;
+                            grossLoss += Math.abs(pnl);
+                        } else {
+                            bes++;
+                        }
+
+                        // Streak Logic
+                        if (t.outcome === prevOutcome) {
+                            streakCount++;
+                        } else {
+                            streakCount = 1;
+                            prevOutcome = t.outcome;
+                        }
+
+                        if (t.outcome === 'win' && streakCount > maxWinStreak) maxWinStreak = streakCount;
+                        if (t.outcome === 'loss' && streakCount > maxLossStreak) maxLossStreak = streakCount;
+
+                        // Drawdown Logic (Absolute %)
+                        currentEquity += pnl;
+                        if (currentEquity > peak) peak = currentEquity;
+                        const dd = peak - currentEquity;
+                        if (dd > maxDD) maxDD = dd;
+                    });
+
+                    // Current streak calc
+                    let curStreakCount = 0;
+                    let curStreakType = '';
+                    if (sorted.length > 0) {
+                        const last = sorted[sorted.length - 1];
+                        curStreakType = last.outcome;
+                        for (let i = sorted.length - 1; i >= 0; i--) {
+                            if (sorted[i].outcome === curStreakType) curStreakCount++;
+                            else break;
+                        }
+                    }
+
+                    const count = sorted.length;
+                    const winRate = (wins / count) * 100;
+                    const lossRate = (losses / count);
+                    const avgWin = wins > 0 ? grossProfit / wins : 0;
+                    const avgLoss = losses > 0 ? grossLoss / losses : 0;
+                    const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
+                    const ev = ((winRate / 100) * avgWin) - (lossRate * avgLoss);
+                    const avgR = totalR / count;
+                    const recFactor = maxDD === 0 ? (totalPnl > 0 ? 100 : 0) : (totalPnl / maxDD);
+
+                    return [
+                        { label: 'Total Trades', value: count },
+                        { label: 'Winning Trades', value: wins, class: 'text-success' },
+                        { label: 'Losing Trades', value: losses, class: 'text-danger' },
+                        { label: 'Breakeven', value: bes, class: 'text-zinc-500' },
+                        { label: 'Win Rate', value: winRate.toFixed(1) + '%' },
+                        { label: 'Total PnL', value: (totalPnl > 0 ? '+' : '') + totalPnl.toFixed(2) + '%', class: totalPnl >= 0 ? 'text-success' : 'text-danger' },
+                        { label: 'Avg Win', value: '+' + avgWin.toFixed(2) + '%', class: 'text-success' },
+                        { label: 'Avg Loss', value: '-' + avgLoss.toFixed(2) + '%', class: 'text-danger' },
+                        { label: 'Profit Factor', value: profitFactor.toFixed(2) },
+                        { label: 'Exp. Value (EV)', value: (ev > 0 ? '+' : '') + ev.toFixed(2) + '%' },
+                        { label: 'Max Drawdown', value: '-' + maxDD.toFixed(2) + '%', class: 'text-danger' },
+                        { label: 'Avg R-Multiple', value: avgR.toFixed(2) + 'R' },
+                        { label: 'Current Streak', value: curStreakCount + ' ' + curStreakType.toUpperCase() },
+                        { label: 'Best Win Streak', value: maxWinStreak, class: 'text-success' },
+                        { label: 'Worst Loss Streak', value: maxLossStreak, class: 'text-danger' },
+                        { label: 'Recovery Factor', value: recFactor.toFixed(2) }
+                    ];
+                },
+
+
+                // --- Chart Logic ---
+                get equityChartData() {
+                    if (this.trades.length === 0) return { path: '', area: '' };
+                    const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+                    let acc = 0;
+                    const points = sorted.map(t => { acc += this.getPnL(t); return acc; });
+                    points.unshift(0);
+                    const min = Math.min(...points);
+                    const max = Math.max(...points);
+                    const range = max - min || 1;
+                    const width = 1000, height = 1000, padding = 50, availHeight = height - (padding * 2);
+
+                    const coordinates = points.map((val, index) => {
+                        const x = (index / (points.length - 1)) * width;
+                        const normalizedY = (val - min) / range;
+                        return `${x},${height - padding - (normalizedY * availHeight)}`;
+                    });
+
+                    const pathCmd = `M ${coordinates.join(' L ')}`;
+                    return { path: pathCmd, area: `${pathCmd} L ${width},${height} L 0,${height} Z` };
+                },
+
+                getBarData(outcome, configKey) {
+                    const counts = {};
+                    this.trades.filter(t => t.outcome === outcome).forEach(t => {
+                        t.reasons.forEach(r => counts[r] = (counts[r] || 0) + 1);
+                    });
+                    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                    if (sorted.length === 0) return [];
+                    const maxVal = sorted[0][1];
+                    return sorted.map(([label, count]) => ({ label, count, pct: (count / maxVal) * 100 }));
+                },
+
+                getTypePercentage(type) {
+                    if (!this.trades.length) return 0;
+                    const count = this.trades.filter(t => t.tradeType === type).length;
+                    return Math.round((count / this.trades.length) * 100);
+                },
+
+
+                // --- Calendar Logic ---
+                get calendarMonthLabel() { return this.currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }); },
+                changeMonth(offset) { this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + offset, 1); },
+                isToday(dateStr) { return dateStr === new Date().toISOString().split('T')[0]; },
+                getTradesForDate(dateStr) { return this.trades.filter(t => t.date === dateStr); },
+
+                get calendarGrid() {
+                    const year = this.currentMonth.getFullYear();
+                    const month = this.currentMonth.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const startDay = new Date(year, month, 1).getDay(); // 0=Sun
+                    const prevMonthDays = new Date(year, month, 0).getDate();
+                    const grid = [];
+
+                    for (let i = startDay - 1; i >= 0; i--) {
+                        grid.push({ dayNum: prevMonthDays - i, isCurrentMonth: false, dateStr: '', key: 'prev' + i });
+                    }
+
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                        const dayTrades = this.trades.filter(t => t.date === dateStr);
+                        const dayPnL = dayTrades.reduce((acc, t) => acc + this.getPnL(t), 0);
+                        grid.push({
+                            dayNum: i,
+                            isCurrentMonth: true,
+                            dateStr,
+                            hasTrades: dayTrades.length > 0,
+                            count: dayTrades.length,
+                            pnl: dayPnL,
+                            key: 'curr' + i
+                        });
+                    }
+                    return grid;
+                },
+
+                get calendarStats() {
+                    // Filter trades for current displayed month
+                    const m = this.currentMonth.getMonth() + 1;
+                    const y = this.currentMonth.getFullYear();
+                    const monthTrades = this.trades.filter(t => {
+                        const d = new Date(t.date);
+                        return d.getMonth() + 1 === m && d.getFullYear() === y;
+                    });
+
+                    return {
+                        count: monthTrades.length,
+                        pnl: monthTrades.reduce((acc, t) => acc + this.getPnL(t), 0)
+                    };
+                },
+
+                // For Highlighting Best Day (From Script 1)
+                get maxMonthlyPnl() {
+                    if (!this.calendarGrid) return 0;
+                    const profits = this.calendarGrid.filter(d => d.hasTrades && d.pnl > 0).map(d => d.pnl);
+                    return profits.length > 0 ? Math.max(...profits) : 0;
+                },
+
+                // Calendar Styling (From Script 1 - more detailed)
+                getDayColorClass(item) {
+                    const pnl = item.pnl;
+                    const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
+                    const threshold = 1.0;
+
+                    // BEST DAY (Yellow)
+                    if (isBestDay) return 'bg-amber-400 border-amber-500';
+
+                    // PROFIT (Green)
+                    if (pnl > 0) {
+                        if (pnl >= threshold) return 'bg-emerald-600 border-emerald-700';
+                        return this.darkMode ? 'bg-emerald-900/40 border-emerald-900' : 'bg-emerald-100 border-emerald-200';
+                    }
+
+                    // LOSS (Red)
+                    if (pnl < 0) {
+                        if (pnl <= -threshold) return 'bg-rose-600 border-rose-700';
+                        return this.darkMode ? 'bg-rose-900/40 border-rose-900' : 'bg-rose-100 border-rose-200';
+                    }
+                    return '';
+                },
+
+                getTextContrastColor(item) {
+                    const pnl = item.pnl;
+                    const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
+                    const threshold = 1.0;
+
+                    if (isBestDay) return 'text-black';
+                    if (pnl >= threshold || pnl <= -threshold) return 'text-white';
+                    if (pnl > 0) return this.darkMode ? 'text-emerald-400' : 'text-emerald-800';
+                    if (pnl < 0) return this.darkMode ? 'text-rose-400' : 'text-rose-800';
+
+                    return this.darkMode ? 'text-zinc-400' : 'text-zinc-500';
+                },
+
+
+                // --- Import/Export (Full State) ---
+                exportData() {
+                    const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                        accounts: this.accounts,
+                        currentAccountId: this.currentAccountId
+                    }));
+                    const el = document.createElement('a');
+                    el.setAttribute("href", data);
+                    el.setAttribute("download", `fx_journal_full_${new Date().toISOString().split('T')[0]}.json`);
+                    document.body.appendChild(el);
+                    el.click();
+                    el.remove();
+                },
+
+                importData(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const parsed = JSON.parse(e.target.result);
+                            if (parsed.accounts && Array.isArray(parsed.accounts)) {
+                                if (confirm(`Overwrite all data? Found ${parsed.accounts.length} accounts.`)) {
+                                    this.accounts = parsed.accounts;
+                                    this.currentAccountId = parsed.currentAccountId || this.accounts[0].id;
+                                    alert('Import Successful');
+                                }
+                            } else { alert('Invalid JSON structure'); }
+                        } catch (err) { alert('Error reading file'); }
+                    };
+                    reader.readAsText(file);
+                    event.target.value = '';
+                }
+            }))
+        });
+    </script>
+</body>
+
+</html>

@@ -1175,252 +1175,238 @@
                 </section>
 
                 <!-- CALENDAR -->
-                <section x-show="activeTab === 'calendar'" x-transition.opacity.duration.300ms>
-                    <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                        class="rounded-xl border shadow-sm p-6">
-
-                        <!-- Header Section -->
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
-                            <!-- Title & Monthly PnL -->
-                            <div class="flex items-center gap-6">
-                                <div>
-                                    <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-zinc-900'"
-                                        x-text="calendarMonthLabel"></h2>
-                                    <p class="text-xs text-zinc-500">Performance Overview</p>
-                                </div>
-
-                                <!-- NEW: Total Monthly PnL Display
-                                <div class="px-4 py-2 rounded-lg border flex flex-col items-center"
-                                    :class="darkMode ? 'bg-zinc-800/50 border-zinc-700' : 'bg-zinc-50 border-zinc-200'">
-                                    <span class="text-[10px] uppercase tracking-wider font-semibold text-zinc-500">Est.
-                                        Total PnL</span>
-                                    <span class="text-lg font-mono font-bold"
-                                        x-data="{ total: calendarGrid.filter(x => x.isCurrentMonth).reduce((acc, curr) => acc + (curr.pnl || 0), 0) }"
-                                        :class="total >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                                        x-text="(total > 0 ? '+' : '') + total.toFixed(2) + '%'">
-                                    </span>
-                                </div> -->
-                            </div>
-
-                            <!-- Controls -->
-                            <div class="flex items-center space-x-1.5 bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded-xl border"
-                                :class="darkMode ? 'border-zinc-700' : 'border-zinc-200'">
-
-                                <button @click="changeMonth(-1)"
-                                    class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 dark:focus:ring-offset-zinc-800">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M15 19l-7-7 7-7"></path>
-                                    </svg>
-                                </button>
-
-                                <button @click="currentMonth = new Date()"
-                                    class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition 
-                       bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 
-                       hover:bg-accent hover:text-white dark:hover:bg-accent focus:outline-none focus:ring-2 focus:ring-accent">
-                                    Today
-                                </button>
-
-                                <button @click="changeMonth(1)"
-                                    class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 dark:focus:ring-offset-zinc-800">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 5l7 7-7 7"></path>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-<!-- Calendar Grid -->
-<div class="grid grid-cols-7 gap-px rounded-xl border relative z-0" :class="darkMode ? 'bg-zinc-800 border-zinc-800' : 'bg-zinc-200 border-zinc-200'">
+               <section x-show="activeTab === 'calendar'" x-transition.opacity.duration.300ms 
+    x-data="{ calendarMode: 'daily' }"> <!-- Local state for mode -->
     
-    <!-- Headers -->
-    <template x-for="dayName in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="dayName">
-        <div class="p-3 text-center text-[10px] font-bold uppercase tracking-widest first:rounded-tl-xl last:rounded-tr-xl"
-            :class="darkMode ? 'bg-black text-zinc-500' : 'bg-zinc-50 text-zinc-500'" x-text="dayName">
-        </div>
-    </template>
+    <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+        class="rounded-xl border shadow-sm p-6">
 
-    <!-- Days -->
-    <template x-for="(item, index) in calendarGrid" :key="item.key">
-        <!-- Added @click and cursor-pointer -->
-        <div class="min-h-[100px] p-2 flex flex-col justify-between relative group calendar-day transition-colors duration-200"
-            @click="openDayModal(item)"
-            :class="[
-                /* Base Shapes & Borders */
-                'border-b border-r',
-                darkMode ? 'border-zinc-800' : 'border-zinc-200',
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+            
+            <!-- Left Side: Title & Mode Toggle -->
+            <div class="flex flex-col gap-4">
+                <!-- Mode Toggle Switch -->
                 
-                /* Cursor Logic */
-                item.hasTrades ? 'cursor-pointer' : 'cursor-default',
 
-                /* 1. NOT Current Month */
-                !item.isCurrentMonth ? (darkMode ? 'bg-zinc-900/50 opacity-40' : 'bg-zinc-100 opacity-60') : '',
-
-                /* 2. BEST MONTH/DAY */
-                (item.pnl === maxMonthlyPnl && item.pnl > 0) 
-                    ? (darkMode ? 'best-day-dark gradient-animated shadow-inner font-bold' : 'best-day-light gradient-animated shadow-inner font-bold')
-                    : (
-                        /* 3. Standard Heatmap Logic */
-                        item.hasTrades ? getDayColorClass(item) : (darkMode ? 'bg-dark-card hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')
-                    ),
-                
-                /* 4. TODAY */
-                isToday(item.dateStr) && !item.hasTrades ? (darkMode ? 'ring-1 ring-inset ring-white/20' : 'bg-blue-50') : ''
-            ]">
-
-            <!-- Date Number -->
-            <div class="flex justify-between items-start">
-                <span class="text-xs font-medium" :class="[
-                    (item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : (item.hasTrades ? getTextContrastColor(item) : (darkMode ? 'text-zinc-500' : 'text-zinc-400')),
-                    isToday(item.dateStr) && !item.hasTrades ? 'text-accent font-bold' : ''
-                ]" x-text="item.dayNum"></span>
-
-                <!-- Medal Icon -->
-                <template x-if="item.pnl === maxMonthlyPnl && item.pnl > 0">
-                    <span class="text-[10px] scale-125">🏆</span>
-                </template>
-            </div>
-
-            <!-- PnL Display -->
-            <template x-if="item.hasTrades">
-                <div class="text-right mt-auto">
-                    <div class="font-bold text-sm"
-                        :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
-                        x-text="(item.pnl > 0 ? '+' : '') + item.pnl.toFixed(1) + '%'"></div>
-                    <div class="text-[10px] opacity-80"
-                        :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
-                        x-text="item.count + ' trades'"></div>
-                </div>
-            </template>
-
-            <!-- Modified Tooltip (Summary Only) -->
-            <div class="tooltip absolute bottom-full mb-2 rounded-lg shadow-xl border p-3 z-[40] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-32"
-                :class="[
-                    darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200',
-                    (index % 7 === 0 || index % 7 === 1) ? 'left-0 origin-bottom-left' : 
-                    (index % 7 === 5 || index % 7 === 6) ? 'right-0 origin-bottom-right' : 
-                    'left-1/2 -translate-x-1/2 origin-bottom'
-                ]" x-show="item.hasTrades">
-                
-                <!-- Tooltip Header -->
-                <div class="text-xs font-bold mb-1 pb-1 border-b"
-                    :class="darkMode ? 'text-white border-zinc-800' : 'text-black border-zinc-100'">
-                    <div class="flex justify-between">
-                        <span x-text="item.dateStr"></span>
-                        <span :class="item.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                            x-text="(item.pnl>0?'+':'') + item.pnl.toFixed(1) + '%'"></span>
-                    </div>
-                </div>
-                
-                <!-- Tooltip Body (Summary) -->
-                <div class="text-[10px] text-center italic mt-1" :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
-                    <span x-text="item.count"></span> trades<br>
-                    Click to view details
+                <!-- Dynamic Title -->
+                <div>
+                    <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-zinc-900'"
+                        x-text="calendarMode === 'daily' ? calendarMonthLabel : currentMonth.getFullYear()"></h2>
+                    <p class="text-xs text-zinc-500" x-text="calendarMode === 'daily' ? 'Daily Performance' : 'Yearly Overview'"></p>
                 </div>
             </div>
-        </div>
-    </template>
-</div>
-<!-- Trade Details Modal -->
-<div x-show="modalOpen" style="display: none;" 
-    class="fixed inset-0 z-[100] flex items-center justify-center px-4 sm:px-0"
-    x-transition:enter="ease-out duration-300"
-    x-transition:enter-start="opacity-0"
-    x-transition:enter-end="opacity-100"
-    x-transition:leave="ease-in duration-200"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0">
-    
-    <!-- Backdrop -->
-    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" @click="modalOpen = false"></div>
-
-    <!-- Modal Content -->
-    <div class="relative transform rounded-xl shadow-2xl transition-all sm:w-full sm:max-w-lg overflow-hidden border"
-        :class="darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'"
-        x-transition:enter="ease-out duration-300"
-        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-        x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-
-        <template x-if="selectedDay">
-            <div>
-                <!-- Modal Header -->
-                <div class="flex items-center justify-between px-4 py-3 border-b"
-                    :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
-                    <div>
-                        <h3 class="text-lg font-bold leading-6" 
-                            :class="darkMode ? 'text-white' : 'text-zinc-900'"
-                            x-text="selectedDay.dateStr"></h3>
-                        <p class="text-xs mt-0.5" :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
-                            Daily PnL: 
-                            <span :class="selectedDay.pnl >= 0 ? 'text-emerald-500 font-bold' : 'text-rose-500 font-bold'"
-                                  x-text="(selectedDay.pnl > 0 ? '+' : '') + selectedDay.pnl.toFixed(2) + '%'"></span>
-                        </p>
-                    </div>
-                    
-                    <button @click="modalOpen = false" class="rounded-md p-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                        :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
-                        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
+            <div class="flex flex-row gap-4">
+                <div class="inline-flex rounded-lg p-1 relative top-[5px] border self-start"
+                    :class="darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'">
+                    <button @click="calendarMode = 'daily'"
+                        class="px-3 py-1 text-xs font-bold rounded-md transition-all duration-200"
+                        :class="calendarMode === 'daily' 
+                            ? (darkMode ? 'bg-zinc-700 text-white shadow' : 'bg-white text-zinc-900 shadow') 
+                            : (darkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700')">
+                        Daily
+                    </button>
+                    <button @click="calendarMode = 'monthly'"
+                        class="px-3 py-1 text-xs font-bold rounded-md transition-all duration-200"
+                        :class="calendarMode === 'monthly' 
+                            ? (darkMode ? 'bg-zinc-700 text-white shadow' : 'bg-white text-zinc-900 shadow') 
+                            : (darkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700')">
+                        Monthly
                     </button>
                 </div>
+            <!-- Controls (Navigation) -->
+            <div class="flex items-center space-x-1.5 bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded-xl border"
+                :class="darkMode ? 'border-zinc-700' : 'border-zinc-200'">
 
-                <!-- Modal Body: Trade List -->
-                <div class="px-4 py-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                    <div class="space-y-2 mt-2">
-                        <template x-for="t in getTradesForDate(selectedDay.dateStr)" :key="t.id">
-                            <div class="flex items-center justify-between p-3 rounded-lg border transition-colors"
-                                :class="darkMode ? 'bg-zinc-800/50 border-zinc-700/50 hover:bg-zinc-800' : 'bg-zinc-50 border-zinc-100 hover:bg-zinc-100'">
-                                
-                                <!-- Left: Pair & Direction -->
-                                <div class="flex flex-col">
-                                    <div class="flex items-center gap-2">
-                                        <span class="font-bold text-sm" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'" x-text="t.pair"></span>
-                                        <span class="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold tracking-wider"
-                                            :class="t.direction === 'Long' ? (darkMode ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') : (darkMode ? 'bg-rose-500/10 text-rose-400' : 'bg-rose-100 text-rose-700')"
-                                            x-text="t.direction"></span>
-                                    </div>
-                                    <span class="text-[10px] mt-0.5" :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'" x-text="t.time || '00:00'"></span>
-                                </div>
+                <!-- Prev Button -->
+                <button @click="calendarMode === 'daily' ? changeMonth(-1) : changeYear(-1)"
+                    class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                    </svg>
+                </button>
 
-                                <!-- Right: PnL -->
-                                <div class="text-right">
-                                    <div class="font-mono font-bold text-sm"
-                                        :class="getPnL(t) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                                        x-text="(getPnL(t) > 0 ? '+' : '') + getPnL(t).toFixed(2) + '%'"></div>
-                                    <!-- Optional: Add Dollar amount or size here if available -->
-                                </div>
+                <!-- Reset Button -->
+                <button @click="currentMonth = new Date()"
+                    class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-accent hover:text-white dark:hover:bg-accent shadow-sm">
+                    <span x-text="calendarMode === 'daily' ? 'Today' : 'This Year'"></span>
+                </button>
+
+                <!-- Next Button -->
+                <button @click="calendarMode === 'daily' ? changeMonth(1) : changeYear(1)"
+                    class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                    </svg>
+                </button>
+            </div>
+            </div>
+        </div>
+
+        <!-- VIEW 1: DAILY CALENDAR (Your Original Grid) -->
+        <div x-show="calendarMode === 'daily'" x-transition:enter.opacity.duration.300ms>
+            <div class="grid grid-cols-7 gap-px rounded-xl border relative z-0" 
+                :class="darkMode ? 'bg-zinc-800 border-zinc-800' : 'bg-zinc-200 border-zinc-200'">
+                
+                <!-- Headers -->
+                <template x-for="dayName in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="dayName">
+                    <div class="p-3 text-center text-[10px] font-bold uppercase tracking-widest first:rounded-tl-xl last:rounded-tr-xl"
+                        :class="darkMode ? 'bg-black text-zinc-500' : 'bg-zinc-50 text-zinc-500'" x-text="dayName">
+                    </div>
+                </template>
+
+                <!-- Days Loop -->
+                <template x-for="(item, index) in calendarGrid" :key="item.key">
+                    <div class="min-h-[100px] p-2 flex flex-col justify-between relative group calendar-day transition-colors duration-200"
+                        @click="openDayModal(item)"
+                        :class="[
+                            'border-b border-r',
+                            darkMode ? 'border-zinc-800' : 'border-zinc-200',
+                            item.hasTrades ? 'cursor-pointer' : 'cursor-default',
+                            !item.isCurrentMonth ? (darkMode ? 'bg-zinc-900/50 opacity-40' : 'bg-zinc-100 opacity-60') : '',
+                            (item.pnl === maxMonthlyPnl && item.pnl > 0) 
+                                ? (darkMode ? 'best-day-dark gradient-animated shadow-inner font-bold' : 'best-day-light gradient-animated shadow-inner font-bold')
+                                : (item.hasTrades ? getDayColorClass(item) : (darkMode ? 'bg-dark-card hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')),
+                            isToday(item.dateStr) && !item.hasTrades ? (darkMode ? 'ring-1 ring-inset ring-white/20' : 'bg-blue-50') : ''
+                        ]">
+
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-medium" :class="[
+                                (item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : (item.hasTrades ? getTextContrastColor(item) : (darkMode ? 'text-zinc-500' : 'text-zinc-400')),
+                                isToday(item.dateStr) && !item.hasTrades ? 'text-accent font-bold' : ''
+                            ]" x-text="item.dayNum"></span>
+                            <template x-if="item.pnl === maxMonthlyPnl && item.pnl > 0">
+                                <span class="text-[10px] scale-125">🏆</span>
+                            </template>
+                        </div>
+
+                        <template x-if="item.hasTrades">
+                            <div class="text-right mt-auto">
+                                <div class="font-bold text-sm"
+                                    :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
+                                    x-text="(item.pnl > 0 ? '+' : '') + item.pnl.toFixed(1) + '%'"></div>
+                                <div class="text-[10px] opacity-80"
+                                    :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
+                                    x-text="item.count + ' trades'"></div>
                             </div>
                         </template>
-                    </div>
-                    
-                    <!-- Empty State check (just in case) -->
-                    <template x-if="getTradesForDate(selectedDay.dateStr).length === 0">
-                        <div class="text-center py-8 text-sm opacity-50">
-                            No trade data found for this ID.
+
+                        <!-- Tooltip -->
+                        <div class="tooltip absolute bottom-full mb-2 rounded-lg shadow-xl border p-3 z-[40] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-32"
+                            :class="[
+                                darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200',
+                                (index % 7 === 0 || index % 7 === 1) ? 'left-0 origin-bottom-left' : 
+                                (index % 7 === 5 || index % 7 === 6) ? 'right-0 origin-bottom-right' : 
+                                'left-1/2 -translate-x-1/2 origin-bottom'
+                            ]" x-show="item.hasTrades">
+                            <div class="text-xs font-bold mb-1 pb-1 border-b"
+                                :class="darkMode ? 'text-white border-zinc-800' : 'text-black border-zinc-100'">
+                                <div class="flex justify-between">
+                                    <span x-text="item.dateStr"></span>
+                                    <span :class="item.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                        x-text="(item.pnl>0?'+':'') + item.pnl.toFixed(1) + '%'"></span>
+                                </div>
+                            </div>
+                            <div class="text-[10px] text-center italic mt-1" :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
+                                <span x-text="item.count"></span> trades<br>Click to details
+                            </div>
                         </div>
-                    </template>
-                </div>
-                
-                <!-- Modal Footer -->
-                <div class="bg-opacity-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6"
-                     :class="darkMode ? 'bg-zinc-800/30' : 'bg-zinc-50'">
-                    <button type="button" 
-                        class="mt-3 inline-flex w-full justify-center rounded-md px-3 py-2 text-sm font-semibold shadow-sm sm:mt-0 sm:w-auto transition-colors"
-                        :class="darkMode ? 'bg-zinc-700 hover:bg-zinc-600 text-white' : 'bg-white hover:bg-zinc-50 text-gray-900 ring-1 ring-inset ring-gray-300'"
-                        @click="modalOpen = false">
-                        Close
-                    </button>
-                </div>
-            </div>
-        </template>
-    </div>
-</div>
                     </div>
-                </section>
+                </template>
+            </div>
+        </div>
+
+        <!-- VIEW 2: MONTHLY OVERVIEW (New Feature) -->
+        <div x-show="calendarMode === 'monthly'" x-transition:enter.opacity.duration.300ms style="display: none;">
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Loop 0-11 for Months -->
+                <template x-for="(monthData, mIndex) in getYearlyGrid()" :key="mIndex">
+                    <div @click="currentMonth = new Date(currentMonth.getFullYear(), mIndex, 1); calendarMode = 'daily'"
+                         class="rounded-xl border p-4 flex flex-col justify-between h-[120px] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+                         :class="[
+                             darkMode ? 'bg-dark-card border-zinc-700 hover:border-zinc-500' : 'bg-white border-zinc-200 hover:border-zinc-400 shadow-sm',
+                             monthData.isCurrent ? (darkMode ? 'ring-1 ring-accent' : 'ring-2 ring-accent') : ''
+                         ]">
+                        
+                        <!-- Month Name & Year -->
+                        <div class="flex justify-between items-start">
+                            <span class="text-lg font-bold uppercase tracking-wider" 
+                                  :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'"
+                                  x-text="monthData.name"></span>
+                            <span class="text-[10px] opacity-50" x-text="currentMonth.getFullYear()"></span>
+                        </div>
+
+                        <!-- Stats -->
+                        <div class="mt-auto">
+                             <template x-if="monthData.count > 0">
+                                <div>
+                                    <div class="text-2xl font-mono font-bold" 
+                                        :class="monthData.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                        x-text="(monthData.pnl > 0 ? '+' : '') + monthData.pnl.toFixed(1) + '%'">
+                                    </div>
+                                    <div class="text-xs opacity-60" 
+                                        :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'"
+                                        x-text="monthData.count + ' trades'">
+                                    </div>
+                                </div>
+                             </template>
+                             <template x-if="monthData.count === 0">
+                                <div class="text-sm italic opacity-30" :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'">
+                                    No Data
+                                </div>
+                             </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+        <!-- Trade Details Modal (Kept same as original) -->
+        <div x-show="modalOpen" style="display: none;" 
+            class="fixed inset-0 z-[100] flex items-center justify-center px-4 sm:px-0"
+            x-transition>
+            <!-- Backdrop -->
+            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="modalOpen = false"></div>
+            <!-- Modal -->
+            <div class="relative transform rounded-xl shadow-2xl transition-all sm:w-full sm:max-w-lg overflow-hidden border"
+                :class="darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'">
+                <template x-if="selectedDay">
+                    <div>
+                        <div class="flex items-center justify-between px-4 py-3 border-b" :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+                            <div>
+                                <h3 class="text-lg font-bold" :class="darkMode ? 'text-white' : 'text-zinc-900'" x-text="selectedDay.dateStr"></h3>
+                                <p class="text-xs" :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
+                                    Daily PnL: <span :class="selectedDay.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'" x-text="(selectedDay.pnl > 0 ? '+' : '') + selectedDay.pnl.toFixed(2) + '%'"></span>
+                                </p>
+                            </div>
+                            <button @click="modalOpen = false" class="p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                        <div class="px-4 py-2 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-2 mt-2">
+                             <template x-for="t in getTradesForDate(selectedDay.dateStr)" :key="t.id">
+                                <div class="flex items-center justify-between p-3 rounded-lg border"
+                                    :class="darkMode ? 'bg-zinc-800/50 border-zinc-700/50' : 'bg-zinc-50 border-zinc-100'">
+                                    <div class="flex flex-col">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-bold text-sm" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'" x-text="t.pair"></span>
+                                            <span class="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold"
+                                                :class="t.direction === 'Long' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
+                                                x-text="t.direction"></span>
+                                        </div>
+                                        <span class="text-[10px]" :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'" x-text="t.time || '00:00'"></span>
+                                    </div>
+                                    <div class="font-mono font-bold text-sm" :class="getPnL(t) >= 0 ? 'text-emerald-500' : 'text-rose-500'" x-text="(getPnL(t) > 0 ? '+' : '') + getPnL(t).toFixed(2) + '%'"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+
+    </div>
+</section>
 
                 <!-- SETTINGS -->
                 <section x-show="activeTab === 'settings'" x-transition.opacity.duration.300ms class="space-y-6">
@@ -1816,571 +1802,584 @@
     </div>
 
     <script>
-        document.addEventListener('alpine:init', () => {
-            Alpine.data('tradeApp', () => ({
-                // --- State ---
-                darkMode: localStorage.getItem('theme') === 'dark',
-                activeTab: 'dashboard',
-                bottomBarOpen: true,
-                sidebarExpanded: false, // Default minimized
-                modalOpen: false,
-    selectedDay: null,
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('tradeApp', () => ({
+            // --- State ---
+            darkMode: localStorage.getItem('theme') === 'dark',
+            activeTab: 'dashboard',
+            bottomBarOpen: true,
+            sidebarExpanded: false,
+            
+            // Calendar State
+            calendarMode: 'daily', // Added: Controls Daily vs Monthly view
+            currentMonth: new Date(),
+            modalOpen: false,
+            selectedDay: null,
 
-    openDayModal(item) {
-        if (!item.hasTrades) return;
-        this.selectedDay = item;
-        this.modalOpen = true;
-    },
+            // --- Calendar Actions ---
+            openDayModal(item) {
+                if (!item.hasTrades) return;
+                this.selectedDay = item;
+                this.modalOpen = true;
+            },
 
-                // Nav Items Data
-                navItems: [
-                    { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
-                    { id: 'journal', label: 'Journal', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>' },
-                    { id: 'calendar', label: 'Calendar', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>' },
-                    { id: 'settings', label: 'Settings', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' }
-                ],
+            changeYear(offset) {
+                const d = new Date(this.currentMonth);
+                d.setFullYear(d.getFullYear() + offset);
+                this.currentMonth = d;
+            },
 
-                // Multi-Account Data Structure
-                accounts: [],
-                currentAccountId: null,
+            getYearlyGrid() {
+                const year = this.currentMonth.getFullYear();
+                const months = [];
+                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                const today = new Date();
 
-                // Default Config (Applied to new accounts)
-                defaultConfig: {
-                    profitConfluences: ['Liquidity Sweep', 'BOS', 'Trend Continuation', 'Fibonacci', 'Supply/Demand'],
-                    lossReasons: ['Early Entry', 'FOMO', 'Counter Trend', 'News Event', 'Overtrading']
-                },
-
-                // UI Form State
-                newAccountName: '',
-                tempPairSelect: '',
-                form: {
-                    id: null,
-                    date: new Date().toISOString().split('T')[0],
-                    pair: '',
-                    isCustomPair: false,
-                    rr: null,
-                    risk: null,
-                    outcome: 'win',
-                    timeframe: '1H',
-                    tradeType: 'day',
-                    reasons: [],
-                    notes: ''
-                },
-                isEditing: false,
-                newConfluence: '',
-                newReason: '',
-                currentMonth: new Date(),
-
-                // --- Initialization ---
-                initApp() {
-                    // 1. FIX: MANUALLY ACTIVATE SHORTCUTS LISTENER
-                    window.addEventListener('keydown', (e) => this.handleShortcuts(e));
-
-                    // Theme Check
-                    if (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                        this.darkMode = true;
-                    }
-                    this.$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'));
-
-                    // Data Load
-                    const stored = localStorage.getItem('fxJournalData');
-                    if (stored) {
-                        try {
-                            const parsed = JSON.parse(stored);
-
-                            // MIGRATION CHECK: Convert old single-account format to multi-account
-                            if (parsed.trades && Array.isArray(parsed.trades) && !parsed.accounts) {
-                                const migratedAccount = {
-                                    id: crypto.randomUUID(),
-                                    name: 'Main Account',
-                                    trades: parsed.trades,
-                                    config: parsed.config || this.defaultConfig
-                                };
-                                this.accounts = [migratedAccount];
-                                this.currentAccountId = migratedAccount.id;
-                                console.log('Migrated legacy data to multi-account structure.');
-                            } else {
-                                // Load new structure
-                                this.accounts = parsed.accounts || [];
-                                this.currentAccountId = parsed.currentAccountId || (this.accounts.length ? this.accounts[0].id : null);
-                            }
-                        } catch (e) {
-                            console.error('Data load error', e);
-                        }
-                    }
-
-                    // Create default account if empty
-                    if (this.accounts.length === 0) {
-                        this.createAccount('Main Account');
-                    }
-
-                    // Auto-save watchers
-                    this.$watch('accounts', () => this.persist());
-                    this.$watch('currentAccountId', () => this.persist());
-                },
-
-                persist() {
-                    localStorage.setItem('fxJournalData', JSON.stringify({
-                        accounts: this.accounts,
-                        currentAccountId: this.currentAccountId
-                    }));
-                },
-
-                // --- Multi-Account Getters ---
-                get activeAccount() {
-                    return this.accounts.find(a => a.id === this.currentAccountId) || this.accounts[0];
-                },
-
-                get trades() {
-                    return this.activeAccount ? this.activeAccount.trades : [];
-                },
-
-                // --- Account Management ---
-                createAccount(name = null) {
-                    const finalName = name || this.newAccountName;
-                    if (!finalName.trim()) return;
-
-                    const newId = crypto.randomUUID();
-                    this.accounts.push({
-                        id: newId,
-                        name: finalName,
-                        trades: [],
-                        config: JSON.parse(JSON.stringify(this.defaultConfig))
+                for (let i = 0; i < 12; i++) {
+                    // Filter trades belonging to this specific month and year
+                    const monthlyTrades = this.trades.filter(t => {
+                        const tDate = new Date(t.date); 
+                        return tDate.getFullYear() === year && tDate.getMonth() === i;
                     });
 
-                    this.currentAccountId = newId;
-                    this.newAccountName = '';
-                },
-
-                switchAccount(id) {
-                    this.currentAccountId = id;
-                    this.activeTab = 'dashboard';
-                    // Reset scroll on main container instead of window
-                    const scroller = document.querySelector('.scroller');
-                    if (scroller) scroller.scrollTop = 0;
-                },
-
-                deleteAccount(id) {
-                    if (this.accounts.length <= 1) return alert('Cannot delete the last account.');
-                    if (confirm('Delete this account and all its trades permanently?')) {
-                        const idx = this.accounts.findIndex(a => a.id === id);
-                        this.accounts.splice(idx, 1);
-                        if (this.currentAccountId === id) {
-                            this.currentAccountId = this.accounts[0].id;
-                        }
-                    }
-                },
-
-                // --- UI Logic ---
-                toggleTheme() { this.darkMode = !this.darkMode; },
-
-                get inputClass() {
-                    return this.darkMode
-                        ? 'w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-accent focus:outline-none placeholder-zinc-600 transition'
-                        : 'w-full bg-white border border-zinc-300 rounded-lg p-2.5 text-xs text-zinc-900 focus:border-accent focus:outline-none placeholder-zinc-400 transition';
-                },
-
-                handleShortcuts(e) {
-                    // Ignore if typing in inputs
-                    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
-
-                    // Shift + Key combinations
-                    if (e.shiftKey) {
-                        switch (e.key.toLowerCase()) {
-                            case 'd': this.activeTab = 'dashboard'; break;
-                            case 'j': this.activeTab = 'journal'; break;
-                            case 'c': this.activeTab = 'calendar'; break;
-                            case 's': this.activeTab = 'settings'; break;
-                            case 'b': this.bottomBarOpen = !this.bottomBarOpen; break;
-                            case 'm': this.sidebarExpanded = !this.sidebarExpanded; break; // Shortcut for sidebar
-                        }
-                    }
-                },
-
-                // --- Form & Config Logic (Updated to use activeAccount) ---
-                addConfig(key, val) { if (val.trim()) this.activeAccount.config[key].push(val.trim()); console.log(this.activeAccount.config); },
-                removeConfig(key, idx) { this.activeAccount.config[key].splice(idx, 1); },
-
-                // --- Form Logic ---
-                handlePairChange(e) {
-                    const val = e.target.value;
-                    this.form.isCustomPair = (val === 'custom');
-                    this.form.pair = !this.form.isCustomPair ? val : '';
-                },
-
-                toggleReason(item) {
-                    if (this.form.reasons.includes(item)) this.form.reasons = this.form.reasons.filter(i => i !== item);
-                    else this.form.reasons.push(item);
-                },
-
-                resetForm() {
-                    this.isEditing = false;
-                    this.tempPairSelect = '';
-                    this.form = {
-                        id: null, date: new Date().toISOString().split('T')[0], pair: '', isCustomPair: false,
-                        rr: null, risk: null, outcome: 'win', timeframe: '1H', tradeType: 'day', reasons: [], notes: ''
-                    };
-                },
-
-                saveTrade() {
-                    if (!this.form.pair && !this.tempPairSelect) return alert('Select a pair');
-                    if (this.tempPairSelect === 'custom' && !this.form.pair.trim()) return alert('Enter pair name');
-
-                    const tradeData = JSON.parse(JSON.stringify(this.form));
-
-                    // Access trades via activeAccount
-                    const account = this.activeAccount;
-
-                    if (this.isEditing) {
-                        const index = account.trades.findIndex(t => t.id === this.form.id);
-                        if (index !== -1) account.trades[index] = tradeData;
-                    } else {
-                        tradeData.id = crypto.randomUUID();
-                        account.trades.push(tradeData);
-                    }
-                    this.resetForm();
-                    // Force reactivity update if needed
-                    this.accounts = [...this.accounts];
-                },
-
-                editTrade(trade) {
-                    this.form = JSON.parse(JSON.stringify(trade));
-                    this.isEditing = true;
-                    this.activeTab = 'journal';
-                    const knownPairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'US30', 'NAS100', 'BTCUSD'];
-                    this.form.isCustomPair = !knownPairs.includes(trade.pair);
-                    this.tempPairSelect = this.form.isCustomPair ? 'custom' : trade.pair;
-                    const scroller = document.querySelector('.scroller');
-                    if (scroller) scroller.scrollTop = 0;
-                },
-
-                deleteTrade(id) {
-                    if (confirm('Delete trade?')) {
-                        const account = this.activeAccount;
-                        account.trades = account.trades.filter(t => t.id !== id);
-                        this.accounts = [...this.accounts];
-                    }
-                },
-
-                // --- Analysis Helpers ---
-                getPnL(trade) {
-                    const risk = parseFloat(trade.risk) || 0;
-                    if (trade.outcome === 'loss') return -risk;
-                    if (trade.outcome === 'win') return risk * (parseFloat(trade.rr) || 0);
-                    return 0;
-                },
-
-                get sortedTrades() {
-                    return [...this.trades].sort((a, b) => new Date(b.date) - new Date(a.date));
-                },
-
-                // --- Statistics (Merged from Script 1 & 2) ---
-                get dashboardStats() {
-                    const total = this.trades.length;
-                    const wins = this.trades.filter(t => t.outcome === 'win').length;
-                    const winRate = total ? ((wins / total) * 100).toFixed(1) : 0;
-                    const netPnL = this.trades.reduce((acc, t) => acc + this.getPnL(t), 0).toFixed(2);
-
-                    return [
-                        { label: 'Total Trades', value: total },
-                        { label: 'Win Rate', value: winRate + '%', colorClass: winRate >= 50 ? 'text-success' : 'text-danger' },
-                        { label: 'Net Profit', value: (netPnL > 0 ? '+' : '') + netPnL + '%', colorClass: netPnL >= 0 ? 'text-success' : 'text-danger' },
-                        { label: 'Avg Risk', value: (this.trades.reduce((a, t) => a + (t.risk || 0), 0) / (total || 1)).toFixed(2) + '%' },
-                        { label: 'Avg R:R', value: (this.trades.reduce((a, t) => a + (t.rr || 0), 0) / (total || 1)).toFixed(2) + 'R' },
-                    ];
-                },
-
-                // Detailed Stats (From Script 1)
-                get detailedStats() {
-                    const wins = this.trades.filter(t => t.outcome === 'win');
-                    const losses = this.trades.filter(t => t.outcome === 'loss');
-
-                    const avgWin = wins.length ? (wins.reduce((acc, t) => acc + this.getPnL(t), 0) / wins.length).toFixed(2) : '0.00';
-                    const avgLoss = losses.length ? (losses.reduce((acc, t) => acc + this.getPnL(t), 0) / losses.length).toFixed(2) : '0.00';
-
-                    const bestTrade = wins.length ? Math.max(...wins.map(t => this.getPnL(t))).toFixed(2) : '0.00';
-                    const worstTrade = losses.length ? Math.min(...losses.map(t => this.getPnL(t))).toFixed(2) : '0.00';
-
-                    return {
-                        win: { count: wins.length, avg: `+${avgWin}%`, best: `+${bestTrade}%` },
-                        loss: { count: losses.length, avg: `${avgLoss}%`, worst: `${worstTrade}%` }
-                    };
-                },
-
-                // Timeframe Distribution (From Script 1)
-                get timeframeData() {
-                    const counts = {};
-                    this.trades.forEach(t => {
-                        const tf = t.timeframe || 'UNK';
-                        counts[tf] = (counts[tf] || 0) + 1;
+                    // Use getPnL helper to calculate total
+                    const totalPnl = monthlyTrades.reduce((acc, t) => acc + this.getPnL(t), 0);
+                    
+                    months.push({
+                        name: monthNames[i],
+                        index: i,
+                        pnl: totalPnl,
+                        count: monthlyTrades.length,
+                        isCurrent: (year === today.getFullYear() && i === today.getMonth())
                     });
-                    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-                    const maxVal = sorted.length ? sorted[0][1] : 1;
-                    return sorted.map(([label, count]) => ({
-                        label, count, pct: (count / maxVal) * 100
-                    }));
-                },
-
-                // Extended Stats: Drawdown, EV, Streaks (From Script 1)
-                get extendedStats() {
-                    if (!this.trades.length) return null;
-
-                    const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                    let wins = 0, losses = 0, bes = 0;
-                    let grossProfit = 0, grossLoss = 0, totalPnl = 0, totalR = 0;
-                    let currentStreak = 0, maxWinStreak = 0, maxLossStreak = 0;
-                    let streakCount = 0, prevOutcome = '';
-
-                    // Drawdown calc vars
-                    let peak = 0, maxDD = 0, currentEquity = 0;
-
-                    sorted.forEach(t => {
-                        const pnl = this.getPnL(t);
-                        totalPnl += pnl;
-                        if (t.risk > 0) totalR += (pnl / t.risk);
-
-                        if (t.outcome === 'win') {
-                            wins++;
-                            grossProfit += pnl;
-                        } else if (t.outcome === 'loss') {
-                            losses++;
-                            grossLoss += Math.abs(pnl);
-                        } else {
-                            bes++;
-                        }
-
-                        // Streak Logic
-                        if (t.outcome === prevOutcome) {
-                            streakCount++;
-                        } else {
-                            streakCount = 1;
-                            prevOutcome = t.outcome;
-                        }
-
-                        if (t.outcome === 'win' && streakCount > maxWinStreak) maxWinStreak = streakCount;
-                        if (t.outcome === 'loss' && streakCount > maxLossStreak) maxLossStreak = streakCount;
-
-                        // Drawdown Logic (Absolute %)
-                        currentEquity += pnl;
-                        if (currentEquity > peak) peak = currentEquity;
-                        const dd = peak - currentEquity;
-                        if (dd > maxDD) maxDD = dd;
-                    });
-
-                    // Current streak calc
-                    let curStreakCount = 0;
-                    let curStreakType = '';
-                    if (sorted.length > 0) {
-                        const last = sorted[sorted.length - 1];
-                        curStreakType = last.outcome;
-                        for (let i = sorted.length - 1; i >= 0; i--) {
-                            if (sorted[i].outcome === curStreakType) curStreakCount++;
-                            else break;
-                        }
-                    }
-
-                    const count = sorted.length;
-                    const winRate = (wins / count) * 100;
-                    const lossRate = (losses / count);
-                    const avgWin = wins > 0 ? grossProfit / wins : 0;
-                    const avgLoss = losses > 0 ? grossLoss / losses : 0;
-                    const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
-                    const ev = ((winRate / 100) * avgWin) - (lossRate * avgLoss);
-                    const avgR = totalR / count;
-                    const recFactor = maxDD === 0 ? (totalPnl > 0 ? 100 : 0) : (totalPnl / maxDD);
-
-                    return [
-                        { label: 'Total Trades', value: count },
-                        { label: 'Winning Trades', value: wins, class: 'text-success' },
-                        { label: 'Losing Trades', value: losses, class: 'text-danger' },
-                        { label: 'Breakeven', value: bes, class: 'text-zinc-500' },
-                        { label: 'Win Rate', value: winRate.toFixed(1) + '%' },
-                        { label: 'Total PnL', value: (totalPnl > 0 ? '+' : '') + totalPnl.toFixed(2) + '%', class: totalPnl >= 0 ? 'text-success' : 'text-danger' },
-                        { label: 'Avg Win', value: '+' + avgWin.toFixed(2) + '%', class: 'text-success' },
-                        { label: 'Avg Loss', value: '-' + avgLoss.toFixed(2) + '%', class: 'text-danger' },
-                        { label: 'Profit Factor', value: profitFactor.toFixed(2) },
-                        { label: 'Exp. Value (EV)', value: (ev > 0 ? '+' : '') + ev.toFixed(2) + '%' },
-                        { label: 'Max Drawdown', value: '-' + maxDD.toFixed(2) + '%', class: 'text-danger' },
-                        { label: 'Avg R-Multiple', value: avgR.toFixed(2) + 'R' },
-                        { label: 'Current Streak', value: curStreakCount + ' ' + curStreakType.toUpperCase() },
-                        { label: 'Best Win Streak', value: maxWinStreak, class: 'text-success' },
-                        { label: 'Worst Loss Streak', value: maxLossStreak, class: 'text-danger' },
-                        { label: 'Recovery Factor', value: recFactor.toFixed(2) }
-                    ];
-                },
-
-
-                // --- Chart Logic ---
-                get equityChartData() {
-                    if (this.trades.length === 0) return { path: '', area: '' };
-                    const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
-                    let acc = 0;
-                    const points = sorted.map(t => { acc += this.getPnL(t); return acc; });
-                    points.unshift(0);
-                    const min = Math.min(...points);
-                    const max = Math.max(...points);
-                    const range = max - min || 1;
-                    const width = 1000, height = 1000, padding = 50, availHeight = height - (padding * 2);
-
-                    const coordinates = points.map((val, index) => {
-                        const x = (index / (points.length - 1)) * width;
-                        const normalizedY = (val - min) / range;
-                        return `${x},${height - padding - (normalizedY * availHeight)}`;
-                    });
-
-                    const pathCmd = `M ${coordinates.join(' L ')}`;
-                    return { path: pathCmd, area: `${pathCmd} L ${width},${height} L 0,${height} Z` };
-                },
-
-                getBarData(outcome, configKey) {
-                    const counts = {};
-                    this.trades.filter(t => t.outcome === outcome).forEach(t => {
-                        t.reasons.forEach(r => counts[r] = (counts[r] || 0) + 1);
-                    });
-                    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                    if (sorted.length === 0) return [];
-                    const maxVal = sorted[0][1];
-                    return sorted.map(([label, count]) => ({ label, count, pct: (count / maxVal) * 100 }));
-                },
-
-                getTypePercentage(type) {
-                    if (!this.trades.length) return 0;
-                    const count = this.trades.filter(t => t.tradeType === type).length;
-                    return Math.round((count / this.trades.length) * 100);
-                },
-
-
-                // --- Calendar Logic ---
-                get calendarMonthLabel() { return this.currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }); },
-                changeMonth(offset) { this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + offset, 1); },
-                isToday(dateStr) { return dateStr === new Date().toISOString().split('T')[0]; },
-                getTradesForDate(dateStr) { return this.trades.filter(t => t.date === dateStr); },
-
-                get calendarGrid() {
-                    const year = this.currentMonth.getFullYear();
-                    const month = this.currentMonth.getMonth();
-                    const daysInMonth = new Date(year, month + 1, 0).getDate();
-                    const startDay = new Date(year, month, 1).getDay(); // 0=Sun
-                    const prevMonthDays = new Date(year, month, 0).getDate();
-                    const grid = [];
-
-                    for (let i = startDay - 1; i >= 0; i--) {
-                        grid.push({ dayNum: prevMonthDays - i, isCurrentMonth: false, dateStr: '', key: 'prev' + i });
-                    }
-
-                    for (let i = 1; i <= daysInMonth; i++) {
-                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                        const dayTrades = this.trades.filter(t => t.date === dateStr);
-                        const dayPnL = dayTrades.reduce((acc, t) => acc + this.getPnL(t), 0);
-                        grid.push({
-                            dayNum: i,
-                            isCurrentMonth: true,
-                            dateStr,
-                            hasTrades: dayTrades.length > 0,
-                            count: dayTrades.length,
-                            pnl: dayPnL,
-                            key: 'curr' + i
-                        });
-                    }
-                    return grid;
-                },
-
-                get calendarStats() {
-                    // Filter trades for current displayed month
-                    const m = this.currentMonth.getMonth() + 1;
-                    const y = this.currentMonth.getFullYear();
-                    const monthTrades = this.trades.filter(t => {
-                        const d = new Date(t.date);
-                        return d.getMonth() + 1 === m && d.getFullYear() === y;
-                    });
-
-                    return {
-                        count: monthTrades.length,
-                        pnl: monthTrades.reduce((acc, t) => acc + this.getPnL(t), 0)
-                    };
-                },
-
-                // For Highlighting Best Day (From Script 1)
-                get maxMonthlyPnl() {
-                    if (!this.calendarGrid) return 0;
-                    const profits = this.calendarGrid.filter(d => d.hasTrades && d.pnl > 0).map(d => d.pnl);
-                    return profits.length > 0 ? Math.max(...profits) : 0;
-                },
-
-                // Calendar Styling (From Script 1 - more detailed)
-                getDayColorClass(item) {
-                    const pnl = item.pnl;
-                    const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
-                    const threshold = 1.0;
-
-                    // BEST DAY (Yellow)
-                    if (isBestDay) return 'bg-amber-400 border-amber-500';
-
-                    // PROFIT (Green)
-                    if (pnl > 0) {
-                        if (pnl >= threshold) return 'bg-emerald-600 border-emerald-700';
-                        return this.darkMode ? 'bg-emerald-900/40 border-emerald-900' : 'bg-emerald-100 border-emerald-200';
-                    }
-
-                    // LOSS (Red)
-                    if (pnl < 0) {
-                        if (pnl <= -threshold) return 'bg-rose-600 border-rose-700';
-                        return this.darkMode ? 'bg-rose-900/40 border-rose-900' : 'bg-rose-100 border-rose-200';
-                    }
-                    return '';
-                },
-
-                getTextContrastColor(item) {
-                    const pnl = item.pnl;
-                    const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
-                    const threshold = 1.0;
-
-                    if (isBestDay) return 'text-black';
-                    if (pnl >= threshold || pnl <= -threshold) return 'text-white';
-                    if (pnl > 0) return this.darkMode ? 'text-emerald-400' : 'text-emerald-800';
-                    if (pnl < 0) return this.darkMode ? 'text-rose-400' : 'text-rose-800';
-
-                    return this.darkMode ? 'text-zinc-400' : 'text-zinc-500';
-                },
-
-
-                // --- Import/Export (Full State) ---
-                exportData() {
-                    const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-                        accounts: this.accounts,
-                        currentAccountId: this.currentAccountId
-                    }));
-                    const el = document.createElement('a');
-                    el.setAttribute("href", data);
-                    el.setAttribute("download", `fx_journal_full_${new Date().toISOString().split('T')[0]}.json`);
-                    document.body.appendChild(el);
-                    el.click();
-                    el.remove();
-                },
-
-                importData(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const parsed = JSON.parse(e.target.result);
-                            if (parsed.accounts && Array.isArray(parsed.accounts)) {
-                                if (confirm(`Overwrite all data? Found ${parsed.accounts.length} accounts.`)) {
-                                    this.accounts = parsed.accounts;
-                                    this.currentAccountId = parsed.currentAccountId || this.accounts[0].id;
-                                    alert('Import Successful');
-                                }
-                            } else { alert('Invalid JSON structure'); }
-                        } catch (err) { alert('Error reading file'); }
-                    };
-                    reader.readAsText(file);
-                    event.target.value = '';
                 }
-            }))
-        });
-    </script>
+                return months;
+            },
+
+            // --- Navigation Data ---
+            navItems: [
+                { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
+                { id: 'journal', label: 'Journal', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>' },
+                { id: 'calendar', label: 'Calendar', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>' },
+                { id: 'settings', label: 'Settings', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' }
+            ],
+
+            // Multi-Account Data Structure
+            accounts: [],
+            currentAccountId: null,
+
+            // Default Config (Applied to new accounts)
+            defaultConfig: {
+                profitConfluences: ['Liquidity Sweep', 'BOS', 'Trend Continuation', 'Fibonacci', 'Supply/Demand'],
+                lossReasons: ['Early Entry', 'FOMO', 'Counter Trend', 'News Event', 'Overtrading']
+            },
+
+            // UI Form State
+            newAccountName: '',
+            tempPairSelect: '',
+            form: {
+                id: null,
+                date: new Date().toISOString().split('T')[0],
+                pair: '',
+                isCustomPair: false,
+                rr: null,
+                risk: null,
+                outcome: 'win',
+                timeframe: '1H',
+                tradeType: 'day',
+                reasons: [],
+                notes: ''
+            },
+            isEditing: false,
+            newConfluence: '',
+            newReason: '',
+
+            // --- Initialization ---
+            initApp() {
+                // Shortcuts
+                window.addEventListener('keydown', (e) => this.handleShortcuts(e));
+
+                // Theme Check
+                if (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    this.darkMode = true;
+                }
+                this.$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'));
+
+                // Data Load
+                const stored = localStorage.getItem('fxJournalData');
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+
+                        // MIGRATION CHECK: Convert old single-account format to multi-account
+                        if (parsed.trades && Array.isArray(parsed.trades) && !parsed.accounts) {
+                            const migratedAccount = {
+                                id: crypto.randomUUID(),
+                                name: 'Main Account',
+                                trades: parsed.trades,
+                                config: parsed.config || this.defaultConfig
+                            };
+                            this.accounts = [migratedAccount];
+                            this.currentAccountId = migratedAccount.id;
+                            console.log('Migrated legacy data to multi-account structure.');
+                        } else {
+                            // Load new structure
+                            this.accounts = parsed.accounts || [];
+                            this.currentAccountId = parsed.currentAccountId || (this.accounts.length ? this.accounts[0].id : null);
+                        }
+                    } catch (e) {
+                        console.error('Data load error', e);
+                    }
+                }
+
+                // Create default account if empty
+                if (this.accounts.length === 0) {
+                    this.createAccount('Main Account');
+                }
+
+                // Auto-save watchers
+                this.$watch('accounts', () => this.persist());
+                this.$watch('currentAccountId', () => this.persist());
+            },
+
+            persist() {
+                localStorage.setItem('fxJournalData', JSON.stringify({
+                    accounts: this.accounts,
+                    currentAccountId: this.currentAccountId
+                }));
+            },
+
+            // --- Multi-Account Getters ---
+            get activeAccount() {
+                return this.accounts.find(a => a.id === this.currentAccountId) || this.accounts[0];
+            },
+
+            get trades() {
+                return this.activeAccount ? this.activeAccount.trades : [];
+            },
+
+            // --- Account Management ---
+            createAccount(name = null) {
+                const finalName = name || this.newAccountName;
+                if (!finalName.trim()) return;
+
+                const newId = crypto.randomUUID();
+                this.accounts.push({
+                    id: newId,
+                    name: finalName,
+                    trades: [],
+                    config: JSON.parse(JSON.stringify(this.defaultConfig))
+                });
+
+                this.currentAccountId = newId;
+                this.newAccountName = '';
+            },
+
+            switchAccount(id) {
+                this.currentAccountId = id;
+                this.activeTab = 'dashboard';
+                const scroller = document.querySelector('.scroller');
+                if (scroller) scroller.scrollTop = 0;
+            },
+
+            deleteAccount(id) {
+                if (this.accounts.length <= 1) return alert('Cannot delete the last account.');
+                if (confirm('Delete this account and all its trades permanently?')) {
+                    const idx = this.accounts.findIndex(a => a.id === id);
+                    this.accounts.splice(idx, 1);
+                    if (this.currentAccountId === id) {
+                        this.currentAccountId = this.accounts[0].id;
+                    }
+                }
+            },
+
+            // --- UI Logic ---
+            toggleTheme() { this.darkMode = !this.darkMode; },
+
+            get inputClass() {
+                return this.darkMode
+                    ? 'w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-accent focus:outline-none placeholder-zinc-600 transition'
+                    : 'w-full bg-white border border-zinc-300 rounded-lg p-2.5 text-xs text-zinc-900 focus:border-accent focus:outline-none placeholder-zinc-400 transition';
+            },
+
+            handleShortcuts(e) {
+                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+                if (e.shiftKey) {
+                    switch (e.key.toLowerCase()) {
+                        case 'd': this.activeTab = 'dashboard'; break;
+                        case 'j': this.activeTab = 'journal'; break;
+                        case 'c': this.activeTab = 'calendar'; break;
+                        case 's': this.activeTab = 'settings'; break;
+                        case 'b': this.bottomBarOpen = !this.bottomBarOpen; break;
+                        case 'm': this.sidebarExpanded = !this.sidebarExpanded; break;
+                    }
+                }
+            },
+
+            // --- Form Logic ---
+            addConfig(key, val) { if (val.trim()) this.activeAccount.config[key].push(val.trim()); },
+            removeConfig(key, idx) { this.activeAccount.config[key].splice(idx, 1); },
+
+            handlePairChange(e) {
+                const val = e.target.value;
+                this.form.isCustomPair = (val === 'custom');
+                this.form.pair = !this.form.isCustomPair ? val : '';
+            },
+
+            toggleReason(item) {
+                if (this.form.reasons.includes(item)) this.form.reasons = this.form.reasons.filter(i => i !== item);
+                else this.form.reasons.push(item);
+            },
+
+            resetForm() {
+                this.isEditing = false;
+                this.tempPairSelect = '';
+                this.form = {
+                    id: null, date: new Date().toISOString().split('T')[0], pair: '', isCustomPair: false,
+                    rr: null, risk: null, outcome: 'win', timeframe: '1H', tradeType: 'day', reasons: [], notes: ''
+                };
+            },
+
+            saveTrade() {
+                if (!this.form.pair && !this.tempPairSelect) return alert('Select a pair');
+                if (this.tempPairSelect === 'custom' && !this.form.pair.trim()) return alert('Enter pair name');
+
+                const tradeData = JSON.parse(JSON.stringify(this.form));
+                const account = this.activeAccount;
+
+                if (this.isEditing) {
+                    const index = account.trades.findIndex(t => t.id === this.form.id);
+                    if (index !== -1) account.trades[index] = tradeData;
+                } else {
+                    tradeData.id = crypto.randomUUID();
+                    account.trades.push(tradeData);
+                }
+                this.resetForm();
+                this.accounts = [...this.accounts]; // Trigger reactivity
+            },
+
+            editTrade(trade) {
+                this.form = JSON.parse(JSON.stringify(trade));
+                this.isEditing = true;
+                this.activeTab = 'journal';
+                const knownPairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'US30', 'NAS100', 'BTCUSD'];
+                this.form.isCustomPair = !knownPairs.includes(trade.pair);
+                this.tempPairSelect = this.form.isCustomPair ? 'custom' : trade.pair;
+                const scroller = document.querySelector('.scroller');
+                if (scroller) scroller.scrollTop = 0;
+            },
+
+            deleteTrade(id) {
+                if (confirm('Delete trade?')) {
+                    const account = this.activeAccount;
+                    account.trades = account.trades.filter(t => t.id !== id);
+                    this.accounts = [...this.accounts];
+                }
+            },
+
+            // --- Analysis Helpers ---
+            getPnL(trade) {
+                const risk = parseFloat(trade.risk) || 0;
+                if (trade.outcome === 'loss') return -risk;
+                if (trade.outcome === 'win') return risk * (parseFloat(trade.rr) || 0);
+                return 0;
+            },
+
+            get sortedTrades() {
+                return [...this.trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+            },
+
+            // --- Statistics ---
+            get dashboardStats() {
+                const total = this.trades.length;
+                const wins = this.trades.filter(t => t.outcome === 'win').length;
+                const winRate = total ? ((wins / total) * 100).toFixed(1) : 0;
+                const netPnL = this.trades.reduce((acc, t) => acc + this.getPnL(t), 0).toFixed(2);
+
+                return [
+                    { label: 'Total Trades', value: total },
+                    { label: 'Win Rate', value: winRate + '%', colorClass: winRate >= 50 ? 'text-success' : 'text-danger' },
+                    { label: 'Net Profit', value: (netPnL > 0 ? '+' : '') + netPnL + '%', colorClass: netPnL >= 0 ? 'text-success' : 'text-danger' },
+                    { label: 'Avg Risk', value: (this.trades.reduce((a, t) => a + (t.risk || 0), 0) / (total || 1)).toFixed(2) + '%' },
+                    { label: 'Avg R:R', value: (this.trades.reduce((a, t) => a + (t.rr || 0), 0) / (total || 1)).toFixed(2) + 'R' },
+                ];
+            },
+
+            get detailedStats() {
+                const wins = this.trades.filter(t => t.outcome === 'win');
+                const losses = this.trades.filter(t => t.outcome === 'loss');
+
+                const avgWin = wins.length ? (wins.reduce((acc, t) => acc + this.getPnL(t), 0) / wins.length).toFixed(2) : '0.00';
+                const avgLoss = losses.length ? (losses.reduce((acc, t) => acc + this.getPnL(t), 0) / losses.length).toFixed(2) : '0.00';
+
+                const bestTrade = wins.length ? Math.max(...wins.map(t => this.getPnL(t))).toFixed(2) : '0.00';
+                const worstTrade = losses.length ? Math.min(...losses.map(t => this.getPnL(t))).toFixed(2) : '0.00';
+
+                return {
+                    win: { count: wins.length, avg: `+${avgWin}%`, best: `+${bestTrade}%` },
+                    loss: { count: losses.length, avg: `${avgLoss}%`, worst: `${worstTrade}%` }
+                };
+            },
+
+            get timeframeData() {
+                const counts = {};
+                this.trades.forEach(t => {
+                    const tf = t.timeframe || 'UNK';
+                    counts[tf] = (counts[tf] || 0) + 1;
+                });
+                const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                const maxVal = sorted.length ? sorted[0][1] : 1;
+                return sorted.map(([label, count]) => ({
+                    label, count, pct: (count / maxVal) * 100
+                }));
+            },
+
+            get extendedStats() {
+                if (!this.trades.length) return null;
+
+                const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                let wins = 0, losses = 0, bes = 0;
+                let grossProfit = 0, grossLoss = 0, totalPnl = 0, totalR = 0;
+                let currentStreak = 0, maxWinStreak = 0, maxLossStreak = 0;
+                let streakCount = 0, prevOutcome = '';
+                let peak = 0, maxDD = 0, currentEquity = 0;
+
+                sorted.forEach(t => {
+                    const pnl = this.getPnL(t);
+                    totalPnl += pnl;
+                    if (t.risk > 0) totalR += (pnl / t.risk);
+
+                    if (t.outcome === 'win') {
+                        wins++;
+                        grossProfit += pnl;
+                    } else if (t.outcome === 'loss') {
+                        losses++;
+                        grossLoss += Math.abs(pnl);
+                    } else {
+                        bes++;
+                    }
+
+                    // Streak Logic
+                    if (t.outcome === prevOutcome) {
+                        streakCount++;
+                    } else {
+                        streakCount = 1;
+                        prevOutcome = t.outcome;
+                    }
+
+                    if (t.outcome === 'win' && streakCount > maxWinStreak) maxWinStreak = streakCount;
+                    if (t.outcome === 'loss' && streakCount > maxLossStreak) maxLossStreak = streakCount;
+
+                    // Drawdown Logic (Absolute %)
+                    currentEquity += pnl;
+                    if (currentEquity > peak) peak = currentEquity;
+                    const dd = peak - currentEquity;
+                    if (dd > maxDD) maxDD = dd;
+                });
+
+                // Current streak calc
+                let curStreakCount = 0;
+                let curStreakType = '';
+                if (sorted.length > 0) {
+                    const last = sorted[sorted.length - 1];
+                    curStreakType = last.outcome;
+                    for (let i = sorted.length - 1; i >= 0; i--) {
+                        if (sorted[i].outcome === curStreakType) curStreakCount++;
+                        else break;
+                    }
+                }
+
+                const count = sorted.length;
+                const winRate = (wins / count) * 100;
+                const lossRate = (losses / count);
+                const avgWin = wins > 0 ? grossProfit / wins : 0;
+                const avgLoss = losses > 0 ? grossLoss / losses : 0;
+                const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
+                const ev = ((winRate / 100) * avgWin) - (lossRate * avgLoss);
+                const avgR = totalR / count;
+                const recFactor = maxDD === 0 ? (totalPnl > 0 ? 100 : 0) : (totalPnl / maxDD);
+
+                return [
+                    { label: 'Total Trades', value: count },
+                    { label: 'Winning Trades', value: wins, class: 'text-success' },
+                    { label: 'Losing Trades', value: losses, class: 'text-danger' },
+                    { label: 'Breakeven', value: bes, class: 'text-zinc-500' },
+                    { label: 'Win Rate', value: winRate.toFixed(1) + '%' },
+                    { label: 'Total PnL', value: (totalPnl > 0 ? '+' : '') + totalPnl.toFixed(2) + '%', class: totalPnl >= 0 ? 'text-success' : 'text-danger' },
+                    { label: 'Avg Win', value: '+' + avgWin.toFixed(2) + '%', class: 'text-success' },
+                    { label: 'Avg Loss', value: '-' + avgLoss.toFixed(2) + '%', class: 'text-danger' },
+                    { label: 'Profit Factor', value: profitFactor.toFixed(2) },
+                    { label: 'Exp. Value (EV)', value: (ev > 0 ? '+' : '') + ev.toFixed(2) + '%' },
+                    { label: 'Max Drawdown', value: '-' + maxDD.toFixed(2) + '%', class: 'text-danger' },
+                    { label: 'Avg R-Multiple', value: avgR.toFixed(2) + 'R' },
+                    { label: 'Current Streak', value: curStreakCount + ' ' + curStreakType.toUpperCase() },
+                    { label: 'Best Win Streak', value: maxWinStreak, class: 'text-success' },
+                    { label: 'Worst Loss Streak', value: maxLossStreak, class: 'text-danger' },
+                    { label: 'Recovery Factor', value: recFactor.toFixed(2) }
+                ];
+            },
+
+            // --- Chart Logic ---
+            get equityChartData() {
+                if (this.trades.length === 0) return { path: '', area: '' };
+                const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+                let acc = 0;
+                const points = sorted.map(t => { acc += this.getPnL(t); return acc; });
+                points.unshift(0);
+                const min = Math.min(...points);
+                const max = Math.max(...points);
+                const range = max - min || 1;
+                const width = 1000, height = 1000, padding = 50, availHeight = height - (padding * 2);
+
+                const coordinates = points.map((val, index) => {
+                    const x = (index / (points.length - 1)) * width;
+                    const normalizedY = (val - min) / range;
+                    return `${x},${height - padding - (normalizedY * availHeight)}`;
+                });
+
+                const pathCmd = `M ${coordinates.join(' L ')}`;
+                return { path: pathCmd, area: `${pathCmd} L ${width},${height} L 0,${height} Z` };
+            },
+
+            getBarData(outcome, configKey) {
+                const counts = {};
+                this.trades.filter(t => t.outcome === outcome).forEach(t => {
+                    t.reasons.forEach(r => counts[r] = (counts[r] || 0) + 1);
+                });
+                const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                if (sorted.length === 0) return [];
+                const maxVal = sorted[0][1];
+                return sorted.map(([label, count]) => ({ label, count, pct: (count / maxVal) * 100 }));
+            },
+
+            getTypePercentage(type) {
+                if (!this.trades.length) return 0;
+                const count = this.trades.filter(t => t.tradeType === type).length;
+                return Math.round((count / this.trades.length) * 100);
+            },
+
+
+            // --- Daily Calendar Logic ---
+            get calendarMonthLabel() { return this.currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }); },
+            changeMonth(offset) { this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + offset, 1); },
+            isToday(dateStr) { return dateStr === new Date().toISOString().split('T')[0]; },
+            getTradesForDate(dateStr) { return this.trades.filter(t => t.date === dateStr); },
+
+            get calendarGrid() {
+                const year = this.currentMonth.getFullYear();
+                const month = this.currentMonth.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const startDay = new Date(year, month, 1).getDay(); // 0=Sun
+                const prevMonthDays = new Date(year, month, 0).getDate();
+                const grid = [];
+
+                for (let i = startDay - 1; i >= 0; i--) {
+                    grid.push({ dayNum: prevMonthDays - i, isCurrentMonth: false, dateStr: '', key: 'prev' + i });
+                }
+
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    const dayTrades = this.trades.filter(t => t.date === dateStr);
+                    const dayPnL = dayTrades.reduce((acc, t) => acc + this.getPnL(t), 0);
+                    grid.push({
+                        dayNum: i,
+                        isCurrentMonth: true,
+                        dateStr,
+                        hasTrades: dayTrades.length > 0,
+                        count: dayTrades.length,
+                        pnl: dayPnL,
+                        key: 'curr' + i
+                    });
+                }
+                return grid;
+            },
+
+            get calendarStats() {
+                const m = this.currentMonth.getMonth() + 1;
+                const y = this.currentMonth.getFullYear();
+                const monthTrades = this.trades.filter(t => {
+                    const d = new Date(t.date);
+                    return d.getMonth() + 1 === m && d.getFullYear() === y;
+                });
+
+                return {
+                    count: monthTrades.length,
+                    pnl: monthTrades.reduce((acc, t) => acc + this.getPnL(t), 0)
+                };
+            },
+
+            get maxMonthlyPnl() {
+                if (!this.calendarGrid) return 0;
+                const profits = this.calendarGrid.filter(d => d.hasTrades && d.pnl > 0).map(d => d.pnl);
+                return profits.length > 0 ? Math.max(...profits) : 0;
+            },
+
+            getDayColorClass(item) {
+                const pnl = item.pnl;
+                const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
+                const threshold = 1.0;
+
+                if (isBestDay) return 'bg-amber-400 border-amber-500';
+                if (pnl > 0) {
+                    if (pnl >= threshold) return 'bg-emerald-600 border-emerald-700';
+                    return this.darkMode ? 'bg-emerald-900/40 border-emerald-900' : 'bg-emerald-100 border-emerald-200';
+                }
+                if (pnl < 0) {
+                    if (pnl <= -threshold) return 'bg-rose-600 border-rose-700';
+                    return this.darkMode ? 'bg-rose-900/40 border-rose-900' : 'bg-rose-100 border-rose-200';
+                }
+                return '';
+            },
+
+            getTextContrastColor(item) {
+                const pnl = item.pnl;
+                const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
+                const threshold = 1.0;
+
+                if (isBestDay) return 'text-black';
+                if (pnl >= threshold || pnl <= -threshold) return 'text-white';
+                if (pnl > 0) return this.darkMode ? 'text-emerald-400' : 'text-emerald-800';
+                if (pnl < 0) return this.darkMode ? 'text-rose-400' : 'text-rose-800';
+                return this.darkMode ? 'text-zinc-400' : 'text-zinc-500';
+            },
+
+            // --- Import/Export ---
+            exportData() {
+                const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                    accounts: this.accounts,
+                    currentAccountId: this.currentAccountId
+                }));
+                const el = document.createElement('a');
+                el.setAttribute("href", data);
+                el.setAttribute("download", `fx_journal_full_${new Date().toISOString().split('T')[0]}.json`);
+                document.body.appendChild(el);
+                el.click();
+                el.remove();
+            },
+
+            importData(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsed = JSON.parse(e.target.result);
+                        if (parsed.accounts && Array.isArray(parsed.accounts)) {
+                            if (confirm(`Overwrite all data? Found ${parsed.accounts.length} accounts.`)) {
+                                this.accounts = parsed.accounts;
+                                this.currentAccountId = parsed.currentAccountId || this.accounts[0].id;
+                                alert('Import Successful');
+                            }
+                        } else { alert('Invalid JSON structure'); }
+                    } catch (err) { alert('Error reading file'); }
+                };
+                reader.readAsText(file);
+                event.target.value = '';
+            }
+        }))
+    });
+</script>
 </body>
 
 </html>

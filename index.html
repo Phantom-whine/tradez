@@ -916,254 +916,409 @@
                             </div>
                         </template>
                     </div>
+                    <!-- Pair Analytics Section -->
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-sm font-bold tracking-tight"
+                                :class="darkMode ? 'text-white' : 'text-zinc-800'">Asset Intelligence</h3>
+                            <div class="flex gap-2">
+                                <span
+                                    class="px-2 py-1 rounded text-[10px] font-bold bg-success/10 text-success border border-success/20">Top
+                                    Performer</span>
+                            </div>
+                        </div>
+
+                        <!-- Spotlight Cards (The Top Pair) -->
+                        <template x-if="getEnhancedPairStats().length > 0">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <!-- Best Performer -->
+                                <div :class="darkMode ? 'bg-gradient-to-br from-zinc-900 to-black border-zinc-800' : 'bg-white border-zinc-200'"
+                                    class="p-4 rounded-2xl border shadow-xl relative overflow-hidden group transition-all hover:border-success/50">
+                                    <div
+                                        class="absolute top-0 right-0 w-32 h-32 bg-success/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-success/10 transition-colors">
+                                    </div>
+                                    <div class="relative z-10">
+                                        <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
+                                            Profit Champion</p>
+                                        <div class="flex items-end gap-3">
+                                            <h4 class="text-3xl font-black italic"
+                                                :class="darkMode ? 'text-white' : 'text-zinc-900'"
+                                                x-text="getEnhancedPairStats()[0].name"></h4>
+                                            <span class="text-success font-mono font-bold mb-1"
+                                                x-text="'+' + getEnhancedPairStats()[0].profitFormatted + '%'"></span>
+                                        </div>
+                                        <div class="mt-4 flex gap-4">
+                                            <div class="flex flex-col">
+                                                <span class="text-[9px] text-zinc-500 uppercase font-bold">Avg Win
+                                                    RR</span>
+                                                <span class="text-xs font-bold"
+                                                    x-text="getEnhancedPairStats()[0].avgWinRR + 'R'"></span>
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="text-[9px] text-zinc-500 uppercase font-bold">Efficiency</span>
+                                                <span class="text-xs font-bold"
+                                                    x-text="getEnhancedPairStats()[0].winRate + '%'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Trade Volume Leader -->
+                                <div :class="darkMode ? 'bg-gradient-to-br from-zinc-900 to-black border-zinc-800' : 'bg-white border-zinc-200'"
+                                    class="p-4 rounded-2xl border shadow-xl relative overflow-hidden group transition-all hover:border-accent/50">
+                                    <div
+                                        class="absolute top-0 right-0 w-32 h-32 bg-accent/5 rounded-full -mr-16 -mt-16 blur-3xl">
+                                    </div>
+                                    <div class="relative z-10"
+                                        x-data="{ leader: [...getEnhancedPairStats()].sort((a,b) => b.total - a.total)[0] }">
+                                        <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1">
+                                            Most Traded</p>
+                                        <div class="flex items-end gap-3">
+                                            <h4 class="text-3xl font-black italic"
+                                                :class="darkMode ? 'text-white' : 'text-zinc-900'" x-text="leader.name">
+                                            </h4>
+                                            <span class="text-zinc-400 font-mono font-bold mb-1"
+                                                x-text="leader.total + ' Trades'"></span>
+                                        </div>
+                                        <div class="mt-4 flex gap-4">
+                                            <div class="flex flex-col">
+                                                <span
+                                                    class="text-[9px] text-zinc-500 uppercase font-bold">Accuracy</span>
+                                                <span class="text-xs font-bold" x-text="leader.winRate + '%'"></span>
+                                            </div>
+                                            <div class="flex flex-col">
+                                                <span class="text-[9px] text-zinc-500 uppercase font-bold">Net
+                                                    Result</span>
+                                                <span class="text-xs font-bold"
+                                                    :class="leader.profit >= 0 ? 'text-success' : 'text-danger'"
+                                                    x-text="leader.profitFormatted + '%'"></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+
+                        <!-- Interactive List -->
+                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                            class="rounded-2xl border shadow-sm overflow-hidden">
+                            <div class="p-4 space-y-2">
+                                <template x-for="(item, index) in getEnhancedPairStats()" :key="item.name">
+                                    <div class="relative flex items-center gap-4 p-3 rounded-xl transition-all duration-300 hover:scale-[1.01]"
+                                        :class="darkMode ? 'bg-zinc-900/40 hover:bg-zinc-800/60' : 'bg-zinc-50 hover:bg-white hover:shadow-md'">
+
+                                        <!-- Rank Indicator -->
+                                        <span class="text-[10px] font-black italic opacity-20 w-4"
+                                            x-text="'0' + (index + 1)"></span>
+
+                                        <!-- Asset Info -->
+                                        <div class="w-24">
+                                            <p class="text-xs font-black tracking-tighter"
+                                                :class="darkMode ? 'text-white' : 'text-zinc-900'" x-text="item.name">
+                                            </p>
+                                            <p class="text-[9px] text-zinc-500 font-bold uppercase"
+                                                x-text="item.total + ' Executions'"></p>
+                                        </div>
+
+                                        <!-- Visual PnL Bar (Centerpiece) -->
+                                        <div class="flex-1 px-4">
+                                            <div class="flex justify-between mb-1 items-center">
+                                                <span class="text-[9px] font-bold text-zinc-500 uppercase">Profit
+                                                    Density</span>
+                                                <span class="text-[9px] font-mono font-bold"
+                                                    :class="item.profit >= 0 ? 'text-success' : 'text-danger'"
+                                                    x-text="item.profitFormatted + '%'"></span>
+                                            </div>
+                                            <div
+                                                class="h-1.5 w-full bg-zinc-200 dark:bg-zinc-800 rounded-full flex overflow-hidden">
+                                                <!-- Win Ratio portion -->
+                                                <div class="h-full bg-success transition-all duration-1000"
+                                                    :style="`width: ${item.winRate}%` shadow-sm"></div>
+                                                <!-- Loss Ratio portion (Gap) -->
+                                                <div class="h-full bg-danger/20 transition-all duration-1000"
+                                                    :style="`width: ${100 - item.winRate}%` opacity-50"></div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Win Rate Circular Ring -->
+                                        <div class="relative w-10 h-10 flex items-center justify-center">
+                                            <svg class="w-full h-full -rotate-90">
+                                                <circle cx="20" cy="20" r="16" fill="none"
+                                                    class="stroke-zinc-200 dark:stroke-zinc-800" stroke-width="3">
+                                                </circle>
+                                                <circle cx="20" cy="20" r="16" fill="none"
+                                                    :class="item.winRate >= 50 ? 'stroke-success' : 'stroke-danger'"
+                                                    stroke-width="3" stroke-dasharray="100"
+                                                    :stroke-dashoffset="100 - item.winRate" stroke-linecap="round">
+                                                </circle>
+                                            </svg>
+                                            <span class="absolute text-[8px] font-black"
+                                                x-text="item.winRate + '%'"></span>
+                                        </div>
+
+                                        <!-- Details Action -->
+                                        <div class="flex flex-col items-end min-w-[60px]">
+                                            <span
+                                                class="text-[9px] text-zinc-500 font-bold uppercase leading-none mb-1">Score</span>
+                                            <span class="text-sm font-black"
+                                                :class="item.profit >= 0 ? 'text-success' : 'text-danger'"
+                                                x-text="Math.round(item.profit * 10)"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- JOURNAL -->
                 <section x-show="activeTab === 'journal'" x-transition.opacity.duration.300ms
-                    class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                    <div class="xl:col-span-1">
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="p-6 rounded-xl border shadow-sm sticky top-0">
-                            <h2 class="text-base font-bold mb-6 flex items-center justify-between"
-                                :class="darkMode ? 'text-white' : 'text-zinc-900'">
-                                <span x-text="isEditing ? 'Edit Entry' : 'New Trade Entry'"></span>
+                    class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+
+                    <!-- LEFT COLUMN: FORM (4 cols) -->
+                    <div class="xl:col-span-4">
+                        <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800 backdrop-blur-xl' : 'bg-white border-zinc-200 shadow-xl'"
+                            class="p-8 rounded-3xl border sticky top-6 transition-all duration-300">
+
+                            <!-- Header -->
+                            <div class="flex items-center justify-between mb-8">
+                                <div>
+                                    <h2 class="text-xl font-extrabold tracking-tight"
+                                        :class="darkMode ? 'text-white' : 'text-zinc-900'">
+                                        <span x-text="isEditing ? 'Edit Trade' : 'New Entry'"></span>
+                                    </h2>
+                                    <p class="text-xs text-zinc-500 mt-1 font-medium">Capture your market psychology.
+                                    </p>
+                                </div>
                                 <button x-show="isEditing" @click="resetForm()"
-                                    class="text-xs text-danger hover:underline">Cancel</button>
-                            </h2>
-                            <form @submit.prevent="saveTrade()" class="space-y-5">
-                                <!-- Instrument -->
-                                <div class="space-y-1">
+                                    class="px-3 py-1 text-xs font-bold text-rose-500 bg-rose-500/10 rounded-full hover:bg-rose-500/20 transition">
+                                    Cancel
+                                </button>
+                            </div>
+
+                            <form @submit.prevent="saveTrade()" class="space-y-6">
+                                <!-- Instrument/Pair Search -->
+                                <div class="space-y-2" x-data="{
+                    search: '',
+                    open: false,
+                    allPairs: ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'BTCUSD', 'NAS100', 'SPX500', 'US30'],
+                    get filteredPairs() {
+                        if (this.search === '') return [];
+                        return this.allPairs.filter(p => p.toLowerCase().includes(this.search.toLowerCase()));
+                    },
+                    selectPair(pair) {
+                        form.pair = pair;
+                        this.search = pair;
+                        this.open = false;
+                    }
+                }">
                                     <label
-                                        class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Pair</label>
-                                    <div class="relative col-span-2" x-data="{
-        search: '',
-        open: false,
-        allPairs: [
-            'EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD',
-            'EURGBP', 'EURAUD', 'EURNZD', 'EURCAD', 'EURCHF', 'EURJPY',
-            'GBPAUD', 'GBPNZD', 'GBPCAD', 'GBPCHF', 'GBPJPY',
-            'AUDNZD', 'AUDCAD', 'AUDCHF', 'AUDJPY',
-            'NZDCAD', 'NZDCHF', 'NZDJPY',
-            'CADCHF', 'CADJPY', 'CHFJPY',
-            'XAUUSD', 'XAGUSD', 'USOIL', 'UKOIL', 'NGAS',
-            'US30', 'NAS100', 'SPX500', 'GER30', 'FRA40', 'UK100', 'JP225',
-            'BTCUSD', 'ETHUSD', 'BNBUSD', 'XRPUSD', 'ADAUSD', 'SOLUSD', 'DOGEUSD',
-            'DOTUSD', 'MATICUSD', 'LTCUSD', 'TRXUSD', 'SHIBUSD', 'AVAXUSD',
-            'LINKUSD', 'UNIUSD', 'ATOMUSD', 'XLMUSD', 'XMRUSD', 'ETCUSD', 'BCHUSD',
-            'ALGOUSD', 'FILUSD', 'VETUSD', 'ICPUSD', 'MANAUSD', 'SANDUSD', 'AXSUSD',
-            'NEARUSD', 'EOSUSD', 'AAVEUSD', 'THETAUSD', 'XTZUSD', 'FTMUSD',
-            'GRTUSD', 'KSMUSD', 'NEOUSD', 'MKRUSD', 'RUNEUSD', 'CAKEUSD', 'LUNA2USD',
-            'ZECUSD', 'MIOTAUSD', 'ENJUSD', 'DASHUSD', 'BATUSD', 'STXUSD',
-            'COMPUSD', 'ZILUSD', 'WAVESUSD', 'RVNUSD', 'KAVAUSD', 'LRCUSD',
-            'USDSGD', 'USDHKD', 'USDTRY', 'USDZAR', 'USDMXN', 'USDNOK', 'USDSEK'
-        ],
-        get filteredPairs() {
-            if (this.search === '') return [];
-            return this.allPairs.filter(pair =>
-                pair.toLowerCase().includes(this.search.toLowerCase())
-            );
-        },
-        selectPair(pair) {
-            this.form.pair = pair;
-            this.search = pair;
-            this.open = false;
-        },
-        init() {
-            // If form.pair already has a value (editing), sync search
-            if(this.form.pair) this.search = this.form.pair;
-        }
-     }" @click.away="open = false">
+                                        class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Instrument</label>
+                                    <div class="relative group">
+                                        <div
+                                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-accent">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                            </svg>
+                                        </div>
+                                        <input type="text" x-model="search" @focus="open = true" @input="open = true"
+                                            placeholder="Search Pair..."
+                                            class="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 transition-all outline-none font-bold uppercase tracking-wider"
+                                            :class="darkMode ? 'bg-zinc-800/50 border-zinc-700/50 focus:border-accent text-white placeholder-zinc-600' : 'bg-zinc-50 border-zinc-100 focus:border-accent text-zinc-900 placeholder-zinc-400'">
 
-                                        <input type="text" x-model="search"
-                                            @input="form.pair = search.toUpperCase(); open = true" @focus="open = true"
-                                            placeholder="Type pair (e.g. EURUSD, BTC...)" :class="inputClass"
-                                            class="w-full uppercase font-bold text-accent" autocomplete="off">
-
-                                        <div x-show="open && filteredPairs.length > 0"
-                                            x-transition:enter="transition ease-out duration-100"
-                                            x-transition:enter-start="transform opacity-0 scale-95"
-                                            x-transition:enter-end="transform opacity-100 scale-100"
-                                            class="absolute z-50 w-full mt-1 bg-black dark:bg-gray-800 border border-zinc-900 dark:border-zinc-700 rounded-md shadow-lg max-h-60 overflow-auto">
-                                            <ul>
-                                                <template x-for="pair in filteredPairs" :key="pair">
-                                                    <li @click="selectPair(pair)"
-                                                        class="px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-sm font-medium uppercase transition-colors duration- text-white">
-                                                        <span x-text="pair"></span>
-                                                    </li>
-                                                </template>
-                                            </ul>
+                                        <!-- Dropdown -->
+                                        <div x-show="open && filteredPairs.length > 0" @click.away="open = false"
+                                            class="absolute z-50 w-full mt-2 rounded-2xl border shadow-2xl overflow-hidden backdrop-blur-xl"
+                                            :class="darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'">
+                                            <template x-for="pair in filteredPairs" :key="pair">
+                                                <div @click="selectPair(pair)"
+                                                    class="px-5 py-3 cursor-pointer hover:bg-accent hover:text-white transition-colors font-bold text-sm"
+                                                    :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'" x-text="pair">
+                                                </div>
+                                            </template>
                                         </div>
                                     </div>
                                 </div>
-                                <!-- Date & TF -->
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div class="space-y-1">
+
+                                <!-- Metrics Grid -->
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div class="space-y-2">
                                         <label
-                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Date</label>
-                                        <input type="date" x-model="form.date" :class="inputClass" required>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label
-                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Timeframe</label>
-                                        <select x-model="form.timeframe" :class="inputClass">
-                                            <option>M1</option>
-                                            <option>M5</option>
-                                            <option>M15</option>
-                                            <option>1H</option>
-                                            <option>4H</option>
-                                            <option>D1</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <!-- Metrics -->
-                                <div class="grid grid-cols-3 gap-3">
-                                    <div class="space-y-1">
-                                        <label
-                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Risk
+                                            class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Risk
                                             %</label>
-                                        <input type="number" step="0.01" x-model.number="form.risk" :class="inputClass"
-                                            placeholder="1.0" required>
+                                        <input type="number" step="0.1" x-model="form.risk" :class="inputClass"
+                                            class="rounded-xl py-3 px-4 font-bold" placeholder="1.0">
                                     </div>
-                                    <div class="space-y-1">
+                                    <div class="space-y-2">
                                         <label
-                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">RR</label>
-                                        <input type="number" step="0.01" x-model.number="form.rr" :class="inputClass"
-                                            placeholder="2.0" required>
-                                    </div>
-                                    <div class="space-y-1">
-                                        <label
-                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Style</label>
-                                        <select x-model="form.tradeType" :class="inputClass" required>
-                                            <option value="day">Day</option>
-                                            <option value="scalp">Scalp</option>
-                                            <option value="swing">Swing</option>
-                                        </select>
+                                            class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Reward
+                                            (RR)</label>
+                                        <input type="number" step="0.1" x-model="form.rr" :class="inputClass"
+                                            class="rounded-xl py-3 px-4 font-bold" placeholder="2.5">
                                     </div>
                                 </div>
-                                <!-- Outcome -->
-                                <div class="space-y-1">
+
+                                <!-- Outcome Segmented Control -->
+                                <div class="space-y-3">
                                     <label
-                                        class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Result</label>
-                                    <div class="flex rounded-md overflow-hidden border"
-                                        :class="darkMode ? 'border-zinc-700' : 'border-zinc-300'">
-                                        <button type="button" @click="form.outcome='win'; form.reasons=[]"
-                                            class="flex-1 py-2 text-xs font-bold transition"
-                                            :class="form.outcome==='win' ? 'bg-success text-black' : (darkMode ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')">WIN</button>
-                                        <button type="button" @click="form.outcome='loss'; form.reasons=[]"
-                                            class="flex-1 py-2 text-xs font-bold transition border-l border-r"
-                                            :class="[darkMode ? 'border-zinc-700' : 'border-zinc-300', form.outcome==='loss' ? 'bg-danger text-white' : (darkMode ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')]">LOSS</button>
-                                        <button type="button" @click="form.outcome='be'; form.reasons=[]"
-                                            class="flex-1 py-2 text-xs font-bold transition"
-                                            :class="form.outcome==='be' ? 'bg-zinc-500 text-white' : (darkMode ? 'bg-zinc-900 hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')">BE</button>
+                                        class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Trade
+                                        Outcome</label>
+                                    <div class="grid grid-cols-3 gap-2 p-1.5 rounded-2xl border"
+                                        :class="darkMode ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-100 border-zinc-200'">
+                                        <button type="button" @click="form.outcome='win'"
+                                            class="py-2.5 rounded-xl text-xs font-black transition-all"
+                                            :class="form.outcome==='win' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-400'">WIN</button>
+                                        <button type="button" @click="form.outcome='loss'"
+                                            class="py-2.5 rounded-xl text-xs font-black transition-all"
+                                            :class="form.outcome==='loss' ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-400'">LOSS</button>
+                                        <button type="button" @click="form.outcome='be'"
+                                            class="py-2.5 rounded-xl text-xs font-black transition-all"
+                                            :class="form.outcome==='be' ? 'bg-zinc-500 text-white shadow-lg shadow-zinc-500/30 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-400'">B.E</button>
                                     </div>
                                 </div>
-                                <!-- Reasons -->
-                                <div class="space-y-1">
-                                    <div class="flex justify-between items-end mb-2">
-                                        <label class="text-[10px] font-bold uppercase tracking-widest text-zinc-500"
-                                            x-text="form.outcome === 'win' ? 'Confluences' : 'Mistakes/Reasons'"></label>
-                                        <button type="button" @click="activeTab = 'settings'"
-                                            class="text-[10px] text-accent hover:underline">Manage Tags</button>
+
+                                <!-- Tags / Reasons -->
+                                <div class="space-y-3">
+                                    <div class="flex justify-between items-center">
+                                        <label
+                                            class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1"
+                                            x-text="form.outcome === 'win' ? 'Confluences' : 'Mistakes'"></label>
                                     </div>
                                     <div class="flex flex-wrap gap-2">
                                         <template
                                             x-for="item in (form.outcome === 'win' ? activeAccount.config.profitConfluences : activeAccount.config.lossReasons)"
                                             :key="item">
                                             <button type="button" @click="toggleReason(item)"
-                                                class="px-3 py-1 text-xs rounded-full border transition select-none"
-                                                :class="form.reasons.includes(item) ? 'bg-accent border-accent text-white' : (darkMode ? 'bg-zinc-900 border-zinc-700 text-zinc-400' : 'bg-white border-zinc-200 text-zinc-600')"><span
-                                                    x-text="item"></span></button>
+                                                class="px-4 py-2 text-[10px] font-bold rounded-xl border-2 transition-all active:scale-90"
+                                                :class="form.reasons.includes(item) 
+                                    ? 'bg-accent border-accent text-white shadow-md' 
+                                    : (darkMode ? 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-500' : 'bg-white border-zinc-100 text-zinc-600 hover:border-zinc-300')">
+                                                <span x-text="item"></span>
+                                            </button>
                                         </template>
                                     </div>
                                 </div>
-                                <div class="space-y-1">
-                                    <label
-                                        class="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Notes</label>
-                                    <textarea x-model="form.notes" rows="2" :class="inputClass"
-                                        placeholder="Details..."></textarea>
-                                </div>
+
                                 <button type="submit"
-                                    class="w-full bg-accent hover:bg-blue-600 text-white font-bold py-3 rounded-lg shadow-lg shadow-blue-500/20 transition transform active:scale-95">
-                                    <span x-text="isEditing ? 'Save Changes' : 'Log Trade'"></span>
+                                    class="w-full bg-accent hover:bg-accent/90 text-white font-black py-4 rounded-2xl shadow-xl shadow-accent/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                                    <span x-text="isEditing ? 'UPDATE POSITION' : 'SECURE LOG'"></span>
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                            d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                    </svg>
                                 </button>
                             </form>
                         </div>
                     </div>
 
-                    <!-- Table -->
-                    <div class="xl:col-span-2 flex flex-col h-full">
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="rounded-xl border shadow-sm flex-1 flex flex-col overflow-hidden">
-                            <div class="p-4 border-b flex justify-between items-center"
-                                :class="darkMode ? 'border-zinc-800' : 'border-zinc-200'">
-                                <h3 class="font-bold text-sm" :class="darkMode ? 'text-white' : 'text-zinc-900'">Trade
-                                    Log</h3>
-                                <span class="text-xs font-mono text-zinc-500"
-                                    x-text="trades.length + ' entries'"></span>
+                    <!-- RIGHT COLUMN: TABLE (8 cols) -->
+                    <div class="xl:col-span-8 flex flex-col">
+                        <div :class="darkMode ? 'bg-zinc-900/40 border-zinc-800' : 'bg-white border-zinc-200'"
+                            class="rounded-3xl border shadow-sm flex-1 flex flex-col overflow-hidden backdrop-blur-sm">
+
+                            <!-- Table Header -->
+                            <div class="px-8 py-6 border-b flex justify-between items-center"
+                                :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+                                <div>
+                                    <h3 class="font-black text-lg tracking-tight"
+                                        :class="darkMode ? 'text-white' : 'text-zinc-900'">Performance Log</h3>
+                                    <p class="text-xs text-zinc-500 font-medium"
+                                        x-text="trades.length + ' Total executions analyzed'"></p>
+                                </div>
+                                <div class="flex gap-2">
+                                    <div
+                                        class="bg-accent/10 text-accent px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter">
+                                        Live Sync</div>
+                                </div>
                             </div>
-                            <div class="overflow-auto scroller flex-1">
-                                <table class="w-full text-left border-collapse">
-                                    <thead class="sticky top-0 z-10 text-[10px] font-bold uppercase tracking-widest"
-                                        :class="darkMode ? 'bg-black text-zinc-500' : 'bg-zinc-50 text-zinc-500'">
-                                        <tr>
-                                            <th class="p-4">Date</th>
-                                            <th class="p-4">Pair</th>
-                                            <th class="p-4">TF</th>
-                                            <th class="p-4">Type</th>
-                                            <th class="p-4">Result</th>
-                                            <th class="p-4 text-right">PnL</th>
-                                            <th class="p-4 text-center">Action</th>
+
+                            <!-- Enhanced Table -->
+                            <div class="overflow-auto flex-1 custom-scrollbar">
+                                <table class="w-full text-left border-separate border-spacing-y-2 px-4">
+                                    <thead class="sticky top-0 z-10">
+                                        <tr class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                                            <th class="p-4">Instrument</th>
+                                            <th class="p-4 text-center">Setup</th>
+                                            <th class="p-4 text-center">Result</th>
+                                            <th class="p-4 text-right">Performance</th>
+                                            <th class="p-4 text-center w-24">Manage</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y text-sm"
-                                        :class="darkMode ? 'divide-zinc-800' : 'divide-zinc-100'">
+                                    <tbody>
                                         <template x-for="trade in sortedTrades" :key="trade.id">
-                                            <tr class="group transition"
-                                                :class="darkMode ? 'hover:bg-zinc-800/50' : 'hover:bg-zinc-50'">
-                                                <td class="p-4 whitespace-nowrap text-zinc-500 text-xs"
-                                                    x-text="trade.date">
+                                            <tr class="group transition-all duration-200 hover:translate-x-1"
+                                                :class="darkMode ? 'bg-zinc-800/30 hover:bg-zinc-800/60' : 'bg-zinc-50/50 hover:bg-zinc-100/80'">
+
+                                                <!-- Pair with Outcome Border -->
+                                                <td class="p-4 rounded-l-2xl border-l-4" :class="{
+                                        'border-emerald-500': trade.outcome === 'win',
+                                        'border-rose-500': trade.outcome === 'loss',
+                                        'border-zinc-500': trade.outcome === 'be'
+                                    }">
+                                                    <div class="flex flex-col">
+                                                        <span class="font-black text-sm tracking-wide"
+                                                            :class="darkMode ? 'text-zinc-100' : 'text-zinc-800'"
+                                                            x-text="trade.pair"></span>
+                                                        <span class="text-[10px] text-zinc-500 font-bold"
+                                                            x-text="trade.date"></span>
+                                                    </div>
                                                 </td>
-                                                <td class="p-4 font-bold text-xs"
-                                                    :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'"
-                                                    x-text="trade.pair">
+
+                                                <td class="p-4 text-center">
+                                                    <div class="flex flex-col items-center">
+                                                        <span
+                                                            class="text-xs font-bold px-2 py-0.5 rounded bg-zinc-500/10 text-zinc-500"
+                                                            x-text="trade.timeframe"></span>
+                                                        <span class="text-[9px] uppercase font-black text-zinc-400 mt-1"
+                                                            x-text="trade.tradeType"></span>
+                                                    </div>
                                                 </td>
-                                                <td class="p-4 text-zinc-500 text-xs" x-text="trade.timeframe"></td>
-                                                <td class="p-4 text-zinc-500 capitalize text-xs"
-                                                    x-text="trade.tradeType"></td>
-                                                <td class="p-4">
+
+                                                <td class="p-4 text-center">
                                                     <span
-                                                        class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border"
+                                                        class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
                                                         :class="{
-                                                            'bg-success/10 text-success border-success/20': trade.outcome === 'win',
-                                                            'bg-danger/10 text-danger border-danger/20': trade.outcome === 'loss',
-                                                            'bg-zinc-500/10 text-zinc-500 border-zinc-500/20': trade.outcome === 'be'
-                                                        }" x-text="trade.outcome">
+                                            'bg-emerald-500/10 text-emerald-500 border-emerald-500/20': trade.outcome === 'win',
+                                            'bg-rose-500/10 text-rose-500 border-rose-500/20': trade.outcome === 'loss',
+                                            'bg-zinc-500/10 text-zinc-500 border-zinc-500/20': trade.outcome === 'be'
+                                        }" x-text="trade.outcome">
                                                     </span>
                                                 </td>
-                                                <td class="p-4 text-right font-mono font-bold text-xs"
-                                                    :class="getPnL(trade) >= 0 ? 'text-success' : 'text-danger'"
-                                                    x-text="(getPnL(trade) > 0 ? '+' : '') + getPnL(trade).toFixed(2) + '%'">
+
+                                                <td class="p-4 text-right">
+                                                    <div class="font-mono font-black text-sm"
+                                                        :class="getPnL(trade) >= 0 ? 'text-emerald-500' : 'text-rose-500'">
+                                                        <span
+                                                            x-text="(getPnL(trade) > 0 ? '+' : '') + getPnL(trade).toFixed(2) + '%'"></span>
+                                                    </div>
                                                 </td>
-                                                <td
-                                                    class="p-4 text-center flex justify-center gap-2 opacity-0 group-hover:opacity-100 transition">
-                                                    <button @click="editTrade(trade)"
-                                                        class="text-accent hover:text-white p-1 rounded hover:bg-accent"><svg
-                                                            class="w-3 h-3" fill="none" stroke="currentColor"
-                                                            viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
-                                                            </path>
-                                                        </svg></button>
-                                                    <button @click="deleteTrade(trade.id)"
-                                                        class="text-zinc-500 hover:text-white p-1 rounded hover:bg-danger"><svg
-                                                            class="w-3 h-3" fill="none" stroke="currentColor"
-                                                            viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
-                                                            </path>
-                                                        </svg></button>
+
+                                                <td class="p-4 rounded-r-2xl">
+                                                    <div
+                                                        class="flex justify-center items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <button @click="editTrade(trade)"
+                                                            class="p-2 hover:bg-accent hover:text-white rounded-xl transition text-zinc-400">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z">
+                                                                </path>
+                                                            </svg>
+                                                        </button>
+                                                        <button @click="deleteTrade(trade.id)"
+                                                            class="p-2 hover:bg-rose-500 hover:text-white rounded-xl transition text-zinc-400">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                                </path>
+                                                            </svg>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </template>
@@ -1174,92 +1329,116 @@
                     </div>
                 </section>
 
+                <style>
+                    .custom-scrollbar::-webkit-scrollbar {
+                        width: 6px;
+                    }
+
+                    .custom-scrollbar::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+
+                    .custom-scrollbar::-webkit-scrollbar-thumb {
+                        background: rgba(100, 100, 100, 0.2);
+                        border-radius: 10px;
+                    }
+
+                    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                        background: rgba(100, 100, 100, 0.4);
+                    }
+                </style>
+
                 <!-- CALENDAR -->
-               <section x-show="activeTab === 'calendar'" x-transition.opacity.duration.300ms 
-    x-data="{ calendarMode: 'daily' }"> <!-- Local state for mode -->
-    
-    <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-        class="rounded-xl border shadow-sm p-6">
+                <section x-show="activeTab === 'calendar'" x-transition.opacity.duration.300ms
+                    x-data="{ calendarMode: 'daily' }"> <!-- Local state for mode -->
 
-        <!-- Header Section -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
-            
-            <!-- Left Side: Title & Mode Toggle -->
-            <div class="flex flex-col gap-4">
-                <!-- Mode Toggle Switch -->
-                
+                    <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
+                        class="rounded-xl border shadow-sm p-6">
 
-                <!-- Dynamic Title -->
-                <div>
-                    <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-zinc-900'"
-                        x-text="calendarMode === 'daily' ? calendarMonthLabel : currentMonth.getFullYear()"></h2>
-                    <p class="text-xs text-zinc-500" x-text="calendarMode === 'daily' ? 'Daily Performance' : 'Yearly Overview'"></p>
-                </div>
-            </div>
-            <div class="flex flex-row gap-4">
-                <div class="inline-flex rounded-lg p-1 relative top-[5px] border self-start"
-                    :class="darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'">
-                    <button @click="calendarMode = 'daily'"
-                        class="px-3 py-1 text-xs font-bold rounded-md transition-all duration-200"
-                        :class="calendarMode === 'daily' 
+                        <!-- Header Section -->
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+
+                            <!-- Left Side: Title & Mode Toggle -->
+                            <div class="flex flex-col gap-4">
+                                <!-- Mode Toggle Switch -->
+
+
+                                <!-- Dynamic Title -->
+                                <div>
+                                    <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-zinc-900'"
+                                        x-text="calendarMode === 'daily' ? calendarMonthLabel : currentMonth.getFullYear()">
+                                    </h2>
+                                    <p class="text-xs text-zinc-500"
+                                        x-text="calendarMode === 'daily' ? 'Daily Performance' : 'Yearly Overview'"></p>
+                                </div>
+                            </div>
+                            <div class="flex flex-row gap-4">
+                                <div class="inline-flex rounded-lg p-1 relative top-[5px] border self-start"
+                                    :class="darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'">
+                                    <button @click="calendarMode = 'daily'"
+                                        class="px-3 py-1 text-xs font-bold rounded-md transition-all duration-200"
+                                        :class="calendarMode === 'daily' 
                             ? (darkMode ? 'bg-zinc-700 text-white shadow' : 'bg-white text-zinc-900 shadow') 
                             : (darkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700')">
-                        Daily
-                    </button>
-                    <button @click="calendarMode = 'monthly'"
-                        class="px-3 py-1 text-xs font-bold rounded-md transition-all duration-200"
-                        :class="calendarMode === 'monthly' 
+                                        Daily
+                                    </button>
+                                    <button @click="calendarMode = 'monthly'"
+                                        class="px-3 py-1 text-xs font-bold rounded-md transition-all duration-200"
+                                        :class="calendarMode === 'monthly' 
                             ? (darkMode ? 'bg-zinc-700 text-white shadow' : 'bg-white text-zinc-900 shadow') 
                             : (darkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700')">
-                        Monthly
-                    </button>
-                </div>
-            <!-- Controls (Navigation) -->
-            <div class="flex items-center space-x-1.5 bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded-xl border"
-                :class="darkMode ? 'border-zinc-700' : 'border-zinc-200'">
+                                        Monthly
+                                    </button>
+                                </div>
+                                <!-- Controls (Navigation) -->
+                                <div class="flex items-center space-x-1.5 bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded-xl border"
+                                    :class="darkMode ? 'border-zinc-700' : 'border-zinc-200'">
 
-                <!-- Prev Button -->
-                <button @click="calendarMode === 'daily' ? changeMonth(-1) : changeYear(-1)"
-                    class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                    </svg>
-                </button>
+                                    <!-- Prev Button -->
+                                    <button @click="calendarMode === 'daily' ? changeMonth(-1) : changeYear(-1)"
+                                        class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 19l-7-7 7-7"></path>
+                                        </svg>
+                                    </button>
 
-                <!-- Reset Button -->
-                <button @click="currentMonth = new Date()"
-                    class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-accent hover:text-white dark:hover:bg-accent shadow-sm">
-                    <span x-text="calendarMode === 'daily' ? 'Today' : 'This Year'"></span>
-                </button>
+                                    <!-- Reset Button -->
+                                    <button @click="currentMonth = new Date()"
+                                        class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-accent hover:text-white dark:hover:bg-accent shadow-sm">
+                                        <span x-text="calendarMode === 'daily' ? 'Today' : 'This Year'"></span>
+                                    </button>
 
-                <!-- Next Button -->
-                <button @click="calendarMode === 'daily' ? changeMonth(1) : changeYear(1)"
-                    class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                    </svg>
-                </button>
-            </div>
-            </div>
-        </div>
+                                    <!-- Next Button -->
+                                    <button @click="calendarMode === 'daily' ? changeMonth(1) : changeYear(1)"
+                                        class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7"></path>
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-        <!-- VIEW 1: DAILY CALENDAR (Your Original Grid) -->
-        <div x-show="calendarMode === 'daily'" x-transition:enter.opacity.duration.300ms>
-            <div class="grid grid-cols-7 gap-px rounded-xl border relative z-0" 
-                :class="darkMode ? 'bg-zinc-800 border-zinc-800' : 'bg-zinc-200 border-zinc-200'">
-                
-                <!-- Headers -->
-                <template x-for="dayName in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="dayName">
-                    <div class="p-3 text-center text-[10px] font-bold uppercase tracking-widest first:rounded-tl-xl last:rounded-tr-xl"
-                        :class="darkMode ? 'bg-black text-zinc-500' : 'bg-zinc-50 text-zinc-500'" x-text="dayName">
-                    </div>
-                </template>
+                        <!-- VIEW 1: DAILY CALENDAR (Your Original Grid) -->
+                        <div x-show="calendarMode === 'daily'" x-transition:enter.opacity.duration.300ms>
+                            <div class="grid grid-cols-7 gap-px rounded-xl border relative z-0"
+                                :class="darkMode ? 'bg-zinc-800 border-zinc-800' : 'bg-zinc-200 border-zinc-200'">
 
-                <!-- Days Loop -->
-                <template x-for="(item, index) in calendarGrid" :key="item.key">
-                    <div class="min-h-[100px] p-2 flex flex-col justify-between relative group calendar-day transition-colors duration-200"
-                        @click="openDayModal(item)"
-                        :class="[
+                                <!-- Headers -->
+                                <template x-for="dayName in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
+                                    :key="dayName">
+                                    <div class="p-3 text-center text-[10px] font-bold uppercase tracking-widest first:rounded-tl-xl last:rounded-tr-xl"
+                                        :class="darkMode ? 'bg-black text-zinc-500' : 'bg-zinc-50 text-zinc-500'"
+                                        x-text="dayName">
+                                    </div>
+                                </template>
+
+                                <!-- Days Loop -->
+                                <template x-for="(item, index) in calendarGrid" :key="item.key">
+                                    <div class="min-h-[100px] p-2 flex flex-col justify-between relative group calendar-day transition-colors duration-200"
+                                        @click="openDayModal(item)" :class="[
                             'border-b border-r',
                             darkMode ? 'border-zinc-800' : 'border-zinc-200',
                             item.hasTrades ? 'cursor-pointer' : 'cursor-default',
@@ -1270,143 +1449,167 @@
                             isToday(item.dateStr) && !item.hasTrades ? (darkMode ? 'ring-1 ring-inset ring-white/20' : 'bg-blue-50') : ''
                         ]">
 
-                        <div class="flex justify-between items-start">
-                            <span class="text-xs font-medium" :class="[
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-xs font-medium" :class="[
                                 (item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : (item.hasTrades ? getTextContrastColor(item) : (darkMode ? 'text-zinc-500' : 'text-zinc-400')),
                                 isToday(item.dateStr) && !item.hasTrades ? 'text-accent font-bold' : ''
                             ]" x-text="item.dayNum"></span>
-                            <template x-if="item.pnl === maxMonthlyPnl && item.pnl > 0">
-                                <span class="text-[10px] scale-125">🏆</span>
-                            </template>
-                        </div>
+                                            <template x-if="item.pnl === maxMonthlyPnl && item.pnl > 0">
+                                                <span class="text-[10px] scale-125">🏆</span>
+                                            </template>
+                                        </div>
 
-                        <template x-if="item.hasTrades">
-                            <div class="text-right mt-auto">
-                                <div class="font-bold text-sm"
-                                    :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
-                                    x-text="(item.pnl > 0 ? '+' : '') + item.pnl.toFixed(1) + '%'"></div>
-                                <div class="text-[10px] opacity-80"
-                                    :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
-                                    x-text="item.count + ' trades'"></div>
-                            </div>
-                        </template>
+                                        <template x-if="item.hasTrades">
+                                            <div class="text-right mt-auto">
+                                                <div class="font-bold text-sm"
+                                                    :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
+                                                    x-text="(item.pnl > 0 ? '+' : '') + item.pnl.toFixed(1) + '%'">
+                                                </div>
+                                                <div class="text-[10px] opacity-80"
+                                                    :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
+                                                    x-text="item.count + ' trades'"></div>
+                                            </div>
+                                        </template>
 
-                        <!-- Tooltip -->
-                        <div class="tooltip absolute bottom-full mb-2 rounded-lg shadow-xl border p-3 z-[40] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-32"
-                            :class="[
+                                        <!-- Tooltip -->
+                                        <div class="tooltip absolute bottom-full mb-2 rounded-lg shadow-xl border p-3 z-[40] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-32"
+                                            :class="[
                                 darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200',
                                 (index % 7 === 0 || index % 7 === 1) ? 'left-0 origin-bottom-left' : 
                                 (index % 7 === 5 || index % 7 === 6) ? 'right-0 origin-bottom-right' : 
                                 'left-1/2 -translate-x-1/2 origin-bottom'
                             ]" x-show="item.hasTrades">
-                            <div class="text-xs font-bold mb-1 pb-1 border-b"
-                                :class="darkMode ? 'text-white border-zinc-800' : 'text-black border-zinc-100'">
-                                <div class="flex justify-between">
-                                    <span x-text="item.dateStr"></span>
-                                    <span :class="item.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                                        x-text="(item.pnl>0?'+':'') + item.pnl.toFixed(1) + '%'"></span>
-                                </div>
-                            </div>
-                            <div class="text-[10px] text-center italic mt-1" :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
-                                <span x-text="item.count"></span> trades<br>Click to details
+                                            <div class="text-xs font-bold mb-1 pb-1 border-b"
+                                                :class="darkMode ? 'text-white border-zinc-800' : 'text-black border-zinc-100'">
+                                                <div class="flex justify-between">
+                                                    <span x-text="item.dateStr"></span>
+                                                    <span :class="item.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                                        x-text="(item.pnl>0?'+':'') + item.pnl.toFixed(1) + '%'"></span>
+                                                </div>
+                                            </div>
+                                            <div class="text-[10px] text-center italic mt-1"
+                                                :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
+                                                <span x-text="item.count"></span> trades<br>Click to details
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
                             </div>
                         </div>
-                    </div>
-                </template>
-            </div>
-        </div>
 
-        <!-- VIEW 2: MONTHLY OVERVIEW (New Feature) -->
-        <div x-show="calendarMode === 'monthly'" x-transition:enter.opacity.duration.300ms style="display: none;">
-            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                <!-- Loop 0-11 for Months -->
-                <template x-for="(monthData, mIndex) in getYearlyGrid()" :key="mIndex">
-                    <div @click="currentMonth = new Date(currentMonth.getFullYear(), mIndex, 1); calendarMode = 'daily'"
-                         class="rounded-xl border p-4 flex flex-col justify-between h-[120px] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
-                         :class="[
+                        <!-- VIEW 2: MONTHLY OVERVIEW (New Feature) -->
+                        <div x-show="calendarMode === 'monthly'" x-transition:enter.opacity.duration.300ms
+                            style="display: none;">
+                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                <!-- Loop 0-11 for Months -->
+                                <template x-for="(monthData, mIndex) in getYearlyGrid()" :key="mIndex">
+                                    <div @click="currentMonth = new Date(currentMonth.getFullYear(), mIndex, 1); calendarMode = 'daily'"
+                                        class="rounded-xl border p-4 flex flex-col justify-between h-[120px] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
+                                        :class="[
                              darkMode ? 'bg-dark-card border-zinc-700 hover:border-zinc-500' : 'bg-white border-zinc-200 hover:border-zinc-400 shadow-sm',
                              monthData.isCurrent ? (darkMode ? 'ring-1 ring-accent' : 'ring-2 ring-accent') : ''
                          ]">
-                        
-                        <!-- Month Name & Year -->
-                        <div class="flex justify-between items-start">
-                            <span class="text-lg font-bold uppercase tracking-wider" 
-                                  :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'"
-                                  x-text="monthData.name"></span>
-                            <span class="text-[10px] opacity-50" x-text="currentMonth.getFullYear()"></span>
-                        </div>
 
-                        <!-- Stats -->
-                        <div class="mt-auto">
-                             <template x-if="monthData.count > 0">
-                                <div>
-                                    <div class="text-2xl font-mono font-bold" 
-                                        :class="monthData.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                                        x-text="(monthData.pnl > 0 ? '+' : '') + monthData.pnl.toFixed(1) + '%'">
-                                    </div>
-                                    <div class="text-xs opacity-60" 
-                                        :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'"
-                                        x-text="monthData.count + ' trades'">
-                                    </div>
-                                </div>
-                             </template>
-                             <template x-if="monthData.count === 0">
-                                <div class="text-sm italic opacity-30" :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'">
-                                    No Data
-                                </div>
-                             </template>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
-
-        <!-- Trade Details Modal (Kept same as original) -->
-        <div x-show="modalOpen" style="display: none;" 
-            class="fixed inset-0 z-[100] flex items-center justify-center px-4 sm:px-0"
-            x-transition>
-            <!-- Backdrop -->
-            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="modalOpen = false"></div>
-            <!-- Modal -->
-            <div class="relative transform rounded-xl shadow-2xl transition-all sm:w-full sm:max-w-lg overflow-hidden border"
-                :class="darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'">
-                <template x-if="selectedDay">
-                    <div>
-                        <div class="flex items-center justify-between px-4 py-3 border-b" :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
-                            <div>
-                                <h3 class="text-lg font-bold" :class="darkMode ? 'text-white' : 'text-zinc-900'" x-text="selectedDay.dateStr"></h3>
-                                <p class="text-xs" :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
-                                    Daily PnL: <span :class="selectedDay.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'" x-text="(selectedDay.pnl > 0 ? '+' : '') + selectedDay.pnl.toFixed(2) + '%'"></span>
-                                </p>
-                            </div>
-                            <button @click="modalOpen = false" class="p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
-                        </div>
-                        <div class="px-4 py-2 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-2 mt-2">
-                             <template x-for="t in getTradesForDate(selectedDay.dateStr)" :key="t.id">
-                                <div class="flex items-center justify-between p-3 rounded-lg border"
-                                    :class="darkMode ? 'bg-zinc-800/50 border-zinc-700/50' : 'bg-zinc-50 border-zinc-100'">
-                                    <div class="flex flex-col">
-                                        <div class="flex items-center gap-2">
-                                            <span class="font-bold text-sm" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'" x-text="t.pair"></span>
-                                            <span class="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold"
-                                                :class="t.direction === 'Long' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
-                                                x-text="t.direction"></span>
+                                        <!-- Month Name & Year -->
+                                        <div class="flex justify-between items-start">
+                                            <span class="text-lg font-bold uppercase tracking-wider"
+                                                :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'"
+                                                x-text="monthData.name"></span>
+                                            <span class="text-[10px] opacity-50"
+                                                x-text="currentMonth.getFullYear()"></span>
                                         </div>
-                                        <span class="text-[10px]" :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'" x-text="t.time || '00:00'"></span>
-                                    </div>
-                                    <div class="font-mono font-bold text-sm" :class="getPnL(t) >= 0 ? 'text-emerald-500' : 'text-rose-500'" x-text="(getPnL(t) > 0 ? '+' : '') + getPnL(t).toFixed(2) + '%'"></div>
-                                </div>
-                            </template>
-                        </div>
-                    </div>
-                </template>
-            </div>
-        </div>
 
-    </div>
-</section>
+                                        <!-- Stats -->
+                                        <div class="mt-auto">
+                                            <template x-if="monthData.count > 0">
+                                                <div>
+                                                    <div class="text-2xl font-mono font-bold"
+                                                        :class="monthData.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                                        x-text="(monthData.pnl > 0 ? '+' : '') + monthData.pnl.toFixed(1) + '%'">
+                                                    </div>
+                                                    <div class="text-xs opacity-60"
+                                                        :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'"
+                                                        x-text="monthData.count + ' trades'">
+                                                    </div>
+                                                </div>
+                                            </template>
+                                            <template x-if="monthData.count === 0">
+                                                <div class="text-sm italic opacity-30"
+                                                    :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'">
+                                                    No Data
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <!-- Trade Details Modal (Kept same as original) -->
+                        <div x-show="modalOpen" style="display: none;"
+                            class="fixed inset-0 z-[100] flex items-center justify-center px-4 sm:px-0" x-transition>
+                            <!-- Backdrop -->
+                            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="modalOpen = false"></div>
+                            <!-- Modal -->
+                            <div class="relative transform rounded-xl shadow-2xl transition-all sm:w-full sm:max-w-lg overflow-hidden border"
+                                :class="darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'">
+                                <template x-if="selectedDay">
+                                    <div>
+                                        <div class="flex items-center justify-between px-4 py-3 border-b"
+                                            :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+                                            <div>
+                                                <h3 class="text-lg font-bold"
+                                                    :class="darkMode ? 'text-white' : 'text-zinc-900'"
+                                                    x-text="selectedDay.dateStr"></h3>
+                                                <p class="text-xs"
+                                                    :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
+                                                    Daily PnL: <span
+                                                        :class="selectedDay.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                                        x-text="(selectedDay.pnl > 0 ? '+' : '') + selectedDay.pnl.toFixed(2) + '%'"></span>
+                                                </p>
+                                            </div>
+                                            <button @click="modalOpen = false"
+                                                class="p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800">
+                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        <div
+                                            class="px-4 py-2 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-2 mt-2">
+                                            <template x-for="t in getTradesForDate(selectedDay.dateStr)" :key="t.id">
+                                                <div class="flex items-center justify-between p-3 rounded-lg border"
+                                                    :class="darkMode ? 'bg-zinc-800/50 border-zinc-700/50' : 'bg-zinc-50 border-zinc-100'">
+                                                    <div class="flex flex-col">
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="font-bold text-sm"
+                                                                :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'"
+                                                                x-text="t.pair"></span>
+                                                            <span
+                                                                class="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold"
+                                                                :class="t.direction === 'Long' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
+                                                                x-text="t.direction"></span>
+                                                        </div>
+                                                        <span class="text-[10px]"
+                                                            :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'"
+                                                            x-text="t.time || '00:00'"></span>
+                                                    </div>
+                                                    <div class="font-mono font-bold text-sm"
+                                                        :class="getPnL(t) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                                        x-text="(getPnL(t) > 0 ? '+' : '') + getPnL(t).toFixed(2) + '%'">
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
 
                 <!-- SETTINGS -->
                 <section x-show="activeTab === 'settings'" x-transition.opacity.duration.300ms class="space-y-6">
@@ -1802,584 +2005,617 @@
     </div>
 
     <script>
-    document.addEventListener('alpine:init', () => {
-        Alpine.data('tradeApp', () => ({
-            // --- State ---
-            darkMode: localStorage.getItem('theme') === 'dark',
-            activeTab: 'dashboard',
-            bottomBarOpen: true,
-            sidebarExpanded: false,
-            
-            // Calendar State
-            calendarMode: 'daily', // Added: Controls Daily vs Monthly view
-            currentMonth: new Date(),
-            modalOpen: false,
-            selectedDay: null,
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('tradeApp', () => ({
+                // --- State ---
+                darkMode: localStorage.getItem('theme') === 'dark',
+                activeTab: 'dashboard',
+                bottomBarOpen: true,
+                sidebarExpanded: false,
 
-            // --- Calendar Actions ---
-            openDayModal(item) {
-                if (!item.hasTrades) return;
-                this.selectedDay = item;
-                this.modalOpen = true;
-            },
+                // Calendar State
+                calendarMode: 'daily', // Added: Controls Daily vs Monthly view
+                currentMonth: new Date(),
+                modalOpen: false,
+                selectedDay: null,
 
-            changeYear(offset) {
-                const d = new Date(this.currentMonth);
-                d.setFullYear(d.getFullYear() + offset);
-                this.currentMonth = d;
-            },
+                // --- Calendar Actions ---
+                openDayModal(item) {
+                    if (!item.hasTrades) return;
+                    this.selectedDay = item;
+                    this.modalOpen = true;
+                },
 
-            getYearlyGrid() {
-                const year = this.currentMonth.getFullYear();
-                const months = [];
-                const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-                const today = new Date();
+                changeYear(offset) {
+                    const d = new Date(this.currentMonth);
+                    d.setFullYear(d.getFullYear() + offset);
+                    this.currentMonth = d;
+                },
 
-                for (let i = 0; i < 12; i++) {
-                    // Filter trades belonging to this specific month and year
-                    const monthlyTrades = this.trades.filter(t => {
-                        const tDate = new Date(t.date); 
-                        return tDate.getFullYear() === year && tDate.getMonth() === i;
-                    });
+                getYearlyGrid() {
+                    const year = this.currentMonth.getFullYear();
+                    const months = [];
+                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    const today = new Date();
 
-                    // Use getPnL helper to calculate total
-                    const totalPnl = monthlyTrades.reduce((acc, t) => acc + this.getPnL(t), 0);
-                    
-                    months.push({
-                        name: monthNames[i],
-                        index: i,
-                        pnl: totalPnl,
-                        count: monthlyTrades.length,
-                        isCurrent: (year === today.getFullYear() && i === today.getMonth())
-                    });
-                }
-                return months;
-            },
+                    for (let i = 0; i < 12; i++) {
+                        // Filter trades belonging to this specific month and year
+                        const monthlyTrades = this.trades.filter(t => {
+                            const tDate = new Date(t.date);
+                            return tDate.getFullYear() === year && tDate.getMonth() === i;
+                        });
 
-            // --- Navigation Data ---
-            navItems: [
-                { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
-                { id: 'journal', label: 'Journal', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>' },
-                { id: 'calendar', label: 'Calendar', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>' },
-                { id: 'settings', label: 'Settings', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' }
-            ],
+                        // Use getPnL helper to calculate total
+                        const totalPnl = monthlyTrades.reduce((acc, t) => acc + this.getPnL(t), 0);
 
-            // Multi-Account Data Structure
-            accounts: [],
-            currentAccountId: null,
-
-            // Default Config (Applied to new accounts)
-            defaultConfig: {
-                profitConfluences: ['Liquidity Sweep', 'BOS', 'Trend Continuation', 'Fibonacci', 'Supply/Demand'],
-                lossReasons: ['Early Entry', 'FOMO', 'Counter Trend', 'News Event', 'Overtrading']
-            },
-
-            // UI Form State
-            newAccountName: '',
-            tempPairSelect: '',
-            form: {
-                id: null,
-                date: new Date().toISOString().split('T')[0],
-                pair: '',
-                isCustomPair: false,
-                rr: null,
-                risk: null,
-                outcome: 'win',
-                timeframe: '1H',
-                tradeType: 'day',
-                reasons: [],
-                notes: ''
-            },
-            isEditing: false,
-            newConfluence: '',
-            newReason: '',
-
-            // --- Initialization ---
-            initApp() {
-                // Shortcuts
-                window.addEventListener('keydown', (e) => this.handleShortcuts(e));
-
-                // Theme Check
-                if (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                    this.darkMode = true;
-                }
-                this.$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'));
-
-                // Data Load
-                const stored = localStorage.getItem('fxJournalData');
-                if (stored) {
-                    try {
-                        const parsed = JSON.parse(stored);
-
-                        // MIGRATION CHECK: Convert old single-account format to multi-account
-                        if (parsed.trades && Array.isArray(parsed.trades) && !parsed.accounts) {
-                            const migratedAccount = {
-                                id: crypto.randomUUID(),
-                                name: 'Main Account',
-                                trades: parsed.trades,
-                                config: parsed.config || this.defaultConfig
-                            };
-                            this.accounts = [migratedAccount];
-                            this.currentAccountId = migratedAccount.id;
-                            console.log('Migrated legacy data to multi-account structure.');
-                        } else {
-                            // Load new structure
-                            this.accounts = parsed.accounts || [];
-                            this.currentAccountId = parsed.currentAccountId || (this.accounts.length ? this.accounts[0].id : null);
-                        }
-                    } catch (e) {
-                        console.error('Data load error', e);
+                        months.push({
+                            name: monthNames[i],
+                            index: i,
+                            pnl: totalPnl,
+                            count: monthlyTrades.length,
+                            isCurrent: (year === today.getFullYear() && i === today.getMonth())
+                        });
                     }
-                }
+                    return months;
+                },
 
-                // Create default account if empty
-                if (this.accounts.length === 0) {
-                    this.createAccount('Main Account');
-                }
+                // --- Navigation Data ---
+                navItems: [
+                    { id: 'dashboard', label: 'Dashboard', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>' },
+                    { id: 'journal', label: 'Journal', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>' },
+                    { id: 'calendar', label: 'Calendar', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>' },
+                    { id: 'settings', label: 'Settings', icon: '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>' }
+                ],
 
-                // Auto-save watchers
-                this.$watch('accounts', () => this.persist());
-                this.$watch('currentAccountId', () => this.persist());
-            },
+                // Multi-Account Data Structure
+                accounts: [],
+                currentAccountId: null,
 
-            persist() {
-                localStorage.setItem('fxJournalData', JSON.stringify({
-                    accounts: this.accounts,
-                    currentAccountId: this.currentAccountId
-                }));
-            },
+                // Default Config (Applied to new accounts)
+                defaultConfig: {
+                    profitConfluences: ['Liquidity Sweep', 'BOS', 'Trend Continuation', 'Fibonacci', 'Supply/Demand'],
+                    lossReasons: ['Early Entry', 'FOMO', 'Counter Trend', 'News Event', 'Overtrading']
+                },
 
-            // --- Multi-Account Getters ---
-            get activeAccount() {
-                return this.accounts.find(a => a.id === this.currentAccountId) || this.accounts[0];
-            },
+                // UI Form State
+                newAccountName: '',
+                tempPairSelect: '',
+                form: {
+                    id: null,
+                    date: new Date().toISOString().split('T')[0],
+                    pair: '',
+                    isCustomPair: false,
+                    rr: null,
+                    risk: null,
+                    outcome: 'win',
+                    timeframe: '1H',
+                    tradeType: 'day',
+                    reasons: [],
+                    notes: ''
+                },
+                isEditing: false,
+                newConfluence: '',
+                newReason: '',
 
-            get trades() {
-                return this.activeAccount ? this.activeAccount.trades : [];
-            },
+                // --- Initialization ---
+                initApp() {
+                    // Shortcuts
+                    window.addEventListener('keydown', (e) => this.handleShortcuts(e));
 
-            // --- Account Management ---
-            createAccount(name = null) {
-                const finalName = name || this.newAccountName;
-                if (!finalName.trim()) return;
-
-                const newId = crypto.randomUUID();
-                this.accounts.push({
-                    id: newId,
-                    name: finalName,
-                    trades: [],
-                    config: JSON.parse(JSON.stringify(this.defaultConfig))
-                });
-
-                this.currentAccountId = newId;
-                this.newAccountName = '';
-            },
-
-            switchAccount(id) {
-                this.currentAccountId = id;
-                this.activeTab = 'dashboard';
-                const scroller = document.querySelector('.scroller');
-                if (scroller) scroller.scrollTop = 0;
-            },
-
-            deleteAccount(id) {
-                if (this.accounts.length <= 1) return alert('Cannot delete the last account.');
-                if (confirm('Delete this account and all its trades permanently?')) {
-                    const idx = this.accounts.findIndex(a => a.id === id);
-                    this.accounts.splice(idx, 1);
-                    if (this.currentAccountId === id) {
-                        this.currentAccountId = this.accounts[0].id;
+                    // Theme Check
+                    if (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                        this.darkMode = true;
                     }
-                }
-            },
+                    this.$watch('darkMode', val => localStorage.setItem('theme', val ? 'dark' : 'light'));
 
-            // --- UI Logic ---
-            toggleTheme() { this.darkMode = !this.darkMode; },
+                    // Data Load
+                    const stored = localStorage.getItem('fxJournalData');
+                    if (stored) {
+                        try {
+                            const parsed = JSON.parse(stored);
 
-            get inputClass() {
-                return this.darkMode
-                    ? 'w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-accent focus:outline-none placeholder-zinc-600 transition'
-                    : 'w-full bg-white border border-zinc-300 rounded-lg p-2.5 text-xs text-zinc-900 focus:border-accent focus:outline-none placeholder-zinc-400 transition';
-            },
-
-            handleShortcuts(e) {
-                if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
-                if (e.shiftKey) {
-                    switch (e.key.toLowerCase()) {
-                        case 'd': this.activeTab = 'dashboard'; break;
-                        case 'j': this.activeTab = 'journal'; break;
-                        case 'c': this.activeTab = 'calendar'; break;
-                        case 's': this.activeTab = 'settings'; break;
-                        case 'b': this.bottomBarOpen = !this.bottomBarOpen; break;
-                        case 'm': this.sidebarExpanded = !this.sidebarExpanded; break;
-                    }
-                }
-            },
-
-            // --- Form Logic ---
-            addConfig(key, val) { if (val.trim()) this.activeAccount.config[key].push(val.trim()); },
-            removeConfig(key, idx) { this.activeAccount.config[key].splice(idx, 1); },
-
-            handlePairChange(e) {
-                const val = e.target.value;
-                this.form.isCustomPair = (val === 'custom');
-                this.form.pair = !this.form.isCustomPair ? val : '';
-            },
-
-            toggleReason(item) {
-                if (this.form.reasons.includes(item)) this.form.reasons = this.form.reasons.filter(i => i !== item);
-                else this.form.reasons.push(item);
-            },
-
-            resetForm() {
-                this.isEditing = false;
-                this.tempPairSelect = '';
-                this.form = {
-                    id: null, date: new Date().toISOString().split('T')[0], pair: '', isCustomPair: false,
-                    rr: null, risk: null, outcome: 'win', timeframe: '1H', tradeType: 'day', reasons: [], notes: ''
-                };
-            },
-
-            saveTrade() {
-                if (!this.form.pair && !this.tempPairSelect) return alert('Select a pair');
-                if (this.tempPairSelect === 'custom' && !this.form.pair.trim()) return alert('Enter pair name');
-
-                const tradeData = JSON.parse(JSON.stringify(this.form));
-                const account = this.activeAccount;
-
-                if (this.isEditing) {
-                    const index = account.trades.findIndex(t => t.id === this.form.id);
-                    if (index !== -1) account.trades[index] = tradeData;
-                } else {
-                    tradeData.id = crypto.randomUUID();
-                    account.trades.push(tradeData);
-                }
-                this.resetForm();
-                this.accounts = [...this.accounts]; // Trigger reactivity
-            },
-
-            editTrade(trade) {
-                this.form = JSON.parse(JSON.stringify(trade));
-                this.isEditing = true;
-                this.activeTab = 'journal';
-                const knownPairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'US30', 'NAS100', 'BTCUSD'];
-                this.form.isCustomPair = !knownPairs.includes(trade.pair);
-                this.tempPairSelect = this.form.isCustomPair ? 'custom' : trade.pair;
-                const scroller = document.querySelector('.scroller');
-                if (scroller) scroller.scrollTop = 0;
-            },
-
-            deleteTrade(id) {
-                if (confirm('Delete trade?')) {
-                    const account = this.activeAccount;
-                    account.trades = account.trades.filter(t => t.id !== id);
-                    this.accounts = [...this.accounts];
-                }
-            },
-
-            // --- Analysis Helpers ---
-            getPnL(trade) {
-                const risk = parseFloat(trade.risk) || 0;
-                if (trade.outcome === 'loss') return -risk;
-                if (trade.outcome === 'win') return risk * (parseFloat(trade.rr) || 0);
-                return 0;
-            },
-
-            get sortedTrades() {
-                return [...this.trades].sort((a, b) => new Date(b.date) - new Date(a.date));
-            },
-
-            // --- Statistics ---
-            get dashboardStats() {
-                const total = this.trades.length;
-                const wins = this.trades.filter(t => t.outcome === 'win').length;
-                const winRate = total ? ((wins / total) * 100).toFixed(1) : 0;
-                const netPnL = this.trades.reduce((acc, t) => acc + this.getPnL(t), 0).toFixed(2);
-
-                return [
-                    { label: 'Total Trades', value: total },
-                    { label: 'Win Rate', value: winRate + '%', colorClass: winRate >= 50 ? 'text-success' : 'text-danger' },
-                    { label: 'Net Profit', value: (netPnL > 0 ? '+' : '') + netPnL + '%', colorClass: netPnL >= 0 ? 'text-success' : 'text-danger' },
-                    { label: 'Avg Risk', value: (this.trades.reduce((a, t) => a + (t.risk || 0), 0) / (total || 1)).toFixed(2) + '%' },
-                    { label: 'Avg R:R', value: (this.trades.reduce((a, t) => a + (t.rr || 0), 0) / (total || 1)).toFixed(2) + 'R' },
-                ];
-            },
-
-            get detailedStats() {
-                const wins = this.trades.filter(t => t.outcome === 'win');
-                const losses = this.trades.filter(t => t.outcome === 'loss');
-
-                const avgWin = wins.length ? (wins.reduce((acc, t) => acc + this.getPnL(t), 0) / wins.length).toFixed(2) : '0.00';
-                const avgLoss = losses.length ? (losses.reduce((acc, t) => acc + this.getPnL(t), 0) / losses.length).toFixed(2) : '0.00';
-
-                const bestTrade = wins.length ? Math.max(...wins.map(t => this.getPnL(t))).toFixed(2) : '0.00';
-                const worstTrade = losses.length ? Math.min(...losses.map(t => this.getPnL(t))).toFixed(2) : '0.00';
-
-                return {
-                    win: { count: wins.length, avg: `+${avgWin}%`, best: `+${bestTrade}%` },
-                    loss: { count: losses.length, avg: `${avgLoss}%`, worst: `${worstTrade}%` }
-                };
-            },
-
-            get timeframeData() {
-                const counts = {};
-                this.trades.forEach(t => {
-                    const tf = t.timeframe || 'UNK';
-                    counts[tf] = (counts[tf] || 0) + 1;
-                });
-                const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-                const maxVal = sorted.length ? sorted[0][1] : 1;
-                return sorted.map(([label, count]) => ({
-                    label, count, pct: (count / maxVal) * 100
-                }));
-            },
-
-            get extendedStats() {
-                if (!this.trades.length) return null;
-
-                const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-                let wins = 0, losses = 0, bes = 0;
-                let grossProfit = 0, grossLoss = 0, totalPnl = 0, totalR = 0;
-                let currentStreak = 0, maxWinStreak = 0, maxLossStreak = 0;
-                let streakCount = 0, prevOutcome = '';
-                let peak = 0, maxDD = 0, currentEquity = 0;
-
-                sorted.forEach(t => {
-                    const pnl = this.getPnL(t);
-                    totalPnl += pnl;
-                    if (t.risk > 0) totalR += (pnl / t.risk);
-
-                    if (t.outcome === 'win') {
-                        wins++;
-                        grossProfit += pnl;
-                    } else if (t.outcome === 'loss') {
-                        losses++;
-                        grossLoss += Math.abs(pnl);
-                    } else {
-                        bes++;
-                    }
-
-                    // Streak Logic
-                    if (t.outcome === prevOutcome) {
-                        streakCount++;
-                    } else {
-                        streakCount = 1;
-                        prevOutcome = t.outcome;
-                    }
-
-                    if (t.outcome === 'win' && streakCount > maxWinStreak) maxWinStreak = streakCount;
-                    if (t.outcome === 'loss' && streakCount > maxLossStreak) maxLossStreak = streakCount;
-
-                    // Drawdown Logic (Absolute %)
-                    currentEquity += pnl;
-                    if (currentEquity > peak) peak = currentEquity;
-                    const dd = peak - currentEquity;
-                    if (dd > maxDD) maxDD = dd;
-                });
-
-                // Current streak calc
-                let curStreakCount = 0;
-                let curStreakType = '';
-                if (sorted.length > 0) {
-                    const last = sorted[sorted.length - 1];
-                    curStreakType = last.outcome;
-                    for (let i = sorted.length - 1; i >= 0; i--) {
-                        if (sorted[i].outcome === curStreakType) curStreakCount++;
-                        else break;
-                    }
-                }
-
-                const count = sorted.length;
-                const winRate = (wins / count) * 100;
-                const lossRate = (losses / count);
-                const avgWin = wins > 0 ? grossProfit / wins : 0;
-                const avgLoss = losses > 0 ? grossLoss / losses : 0;
-                const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
-                const ev = ((winRate / 100) * avgWin) - (lossRate * avgLoss);
-                const avgR = totalR / count;
-                const recFactor = maxDD === 0 ? (totalPnl > 0 ? 100 : 0) : (totalPnl / maxDD);
-
-                return [
-                    { label: 'Total Trades', value: count },
-                    { label: 'Winning Trades', value: wins, class: 'text-success' },
-                    { label: 'Losing Trades', value: losses, class: 'text-danger' },
-                    { label: 'Breakeven', value: bes, class: 'text-zinc-500' },
-                    { label: 'Win Rate', value: winRate.toFixed(1) + '%' },
-                    { label: 'Total PnL', value: (totalPnl > 0 ? '+' : '') + totalPnl.toFixed(2) + '%', class: totalPnl >= 0 ? 'text-success' : 'text-danger' },
-                    { label: 'Avg Win', value: '+' + avgWin.toFixed(2) + '%', class: 'text-success' },
-                    { label: 'Avg Loss', value: '-' + avgLoss.toFixed(2) + '%', class: 'text-danger' },
-                    { label: 'Profit Factor', value: profitFactor.toFixed(2) },
-                    { label: 'Exp. Value (EV)', value: (ev > 0 ? '+' : '') + ev.toFixed(2) + '%' },
-                    { label: 'Max Drawdown', value: '-' + maxDD.toFixed(2) + '%', class: 'text-danger' },
-                    { label: 'Avg R-Multiple', value: avgR.toFixed(2) + 'R' },
-                    { label: 'Current Streak', value: curStreakCount + ' ' + curStreakType.toUpperCase() },
-                    { label: 'Best Win Streak', value: maxWinStreak, class: 'text-success' },
-                    { label: 'Worst Loss Streak', value: maxLossStreak, class: 'text-danger' },
-                    { label: 'Recovery Factor', value: recFactor.toFixed(2) }
-                ];
-            },
-
-            // --- Chart Logic ---
-            get equityChartData() {
-                if (this.trades.length === 0) return { path: '', area: '' };
-                const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
-                let acc = 0;
-                const points = sorted.map(t => { acc += this.getPnL(t); return acc; });
-                points.unshift(0);
-                const min = Math.min(...points);
-                const max = Math.max(...points);
-                const range = max - min || 1;
-                const width = 1000, height = 1000, padding = 50, availHeight = height - (padding * 2);
-
-                const coordinates = points.map((val, index) => {
-                    const x = (index / (points.length - 1)) * width;
-                    const normalizedY = (val - min) / range;
-                    return `${x},${height - padding - (normalizedY * availHeight)}`;
-                });
-
-                const pathCmd = `M ${coordinates.join(' L ')}`;
-                return { path: pathCmd, area: `${pathCmd} L ${width},${height} L 0,${height} Z` };
-            },
-
-            getBarData(outcome, configKey) {
-                const counts = {};
-                this.trades.filter(t => t.outcome === outcome).forEach(t => {
-                    t.reasons.forEach(r => counts[r] = (counts[r] || 0) + 1);
-                });
-                const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
-                if (sorted.length === 0) return [];
-                const maxVal = sorted[0][1];
-                return sorted.map(([label, count]) => ({ label, count, pct: (count / maxVal) * 100 }));
-            },
-
-            getTypePercentage(type) {
-                if (!this.trades.length) return 0;
-                const count = this.trades.filter(t => t.tradeType === type).length;
-                return Math.round((count / this.trades.length) * 100);
-            },
-
-
-            // --- Daily Calendar Logic ---
-            get calendarMonthLabel() { return this.currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }); },
-            changeMonth(offset) { this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + offset, 1); },
-            isToday(dateStr) { return dateStr === new Date().toISOString().split('T')[0]; },
-            getTradesForDate(dateStr) { return this.trades.filter(t => t.date === dateStr); },
-
-            get calendarGrid() {
-                const year = this.currentMonth.getFullYear();
-                const month = this.currentMonth.getMonth();
-                const daysInMonth = new Date(year, month + 1, 0).getDate();
-                const startDay = new Date(year, month, 1).getDay(); // 0=Sun
-                const prevMonthDays = new Date(year, month, 0).getDate();
-                const grid = [];
-
-                for (let i = startDay - 1; i >= 0; i--) {
-                    grid.push({ dayNum: prevMonthDays - i, isCurrentMonth: false, dateStr: '', key: 'prev' + i });
-                }
-
-                for (let i = 1; i <= daysInMonth; i++) {
-                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
-                    const dayTrades = this.trades.filter(t => t.date === dateStr);
-                    const dayPnL = dayTrades.reduce((acc, t) => acc + this.getPnL(t), 0);
-                    grid.push({
-                        dayNum: i,
-                        isCurrentMonth: true,
-                        dateStr,
-                        hasTrades: dayTrades.length > 0,
-                        count: dayTrades.length,
-                        pnl: dayPnL,
-                        key: 'curr' + i
-                    });
-                }
-                return grid;
-            },
-
-            get calendarStats() {
-                const m = this.currentMonth.getMonth() + 1;
-                const y = this.currentMonth.getFullYear();
-                const monthTrades = this.trades.filter(t => {
-                    const d = new Date(t.date);
-                    return d.getMonth() + 1 === m && d.getFullYear() === y;
-                });
-
-                return {
-                    count: monthTrades.length,
-                    pnl: monthTrades.reduce((acc, t) => acc + this.getPnL(t), 0)
-                };
-            },
-
-            get maxMonthlyPnl() {
-                if (!this.calendarGrid) return 0;
-                const profits = this.calendarGrid.filter(d => d.hasTrades && d.pnl > 0).map(d => d.pnl);
-                return profits.length > 0 ? Math.max(...profits) : 0;
-            },
-
-            getDayColorClass(item) {
-                const pnl = item.pnl;
-                const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
-                const threshold = 1.0;
-
-                if (isBestDay) return 'bg-amber-400 border-amber-500';
-                if (pnl > 0) {
-                    if (pnl >= threshold) return 'bg-emerald-600 border-emerald-700';
-                    return this.darkMode ? 'bg-emerald-900/40 border-emerald-900' : 'bg-emerald-100 border-emerald-200';
-                }
-                if (pnl < 0) {
-                    if (pnl <= -threshold) return 'bg-rose-600 border-rose-700';
-                    return this.darkMode ? 'bg-rose-900/40 border-rose-900' : 'bg-rose-100 border-rose-200';
-                }
-                return '';
-            },
-
-            getTextContrastColor(item) {
-                const pnl = item.pnl;
-                const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
-                const threshold = 1.0;
-
-                if (isBestDay) return 'text-black';
-                if (pnl >= threshold || pnl <= -threshold) return 'text-white';
-                if (pnl > 0) return this.darkMode ? 'text-emerald-400' : 'text-emerald-800';
-                if (pnl < 0) return this.darkMode ? 'text-rose-400' : 'text-rose-800';
-                return this.darkMode ? 'text-zinc-400' : 'text-zinc-500';
-            },
-
-            // --- Import/Export ---
-            exportData() {
-                const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
-                    accounts: this.accounts,
-                    currentAccountId: this.currentAccountId
-                }));
-                const el = document.createElement('a');
-                el.setAttribute("href", data);
-                el.setAttribute("download", `fx_journal_full_${new Date().toISOString().split('T')[0]}.json`);
-                document.body.appendChild(el);
-                el.click();
-                el.remove();
-            },
-
-            importData(event) {
-                const file = event.target.files[0];
-                if (!file) return;
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    try {
-                        const parsed = JSON.parse(e.target.result);
-                        if (parsed.accounts && Array.isArray(parsed.accounts)) {
-                            if (confirm(`Overwrite all data? Found ${parsed.accounts.length} accounts.`)) {
-                                this.accounts = parsed.accounts;
-                                this.currentAccountId = parsed.currentAccountId || this.accounts[0].id;
-                                alert('Import Successful');
+                            // MIGRATION CHECK: Convert old single-account format to multi-account
+                            if (parsed.trades && Array.isArray(parsed.trades) && !parsed.accounts) {
+                                const migratedAccount = {
+                                    id: crypto.randomUUID(),
+                                    name: 'Main Account',
+                                    trades: parsed.trades,
+                                    config: parsed.config || this.defaultConfig
+                                };
+                                this.accounts = [migratedAccount];
+                                this.currentAccountId = migratedAccount.id;
+                                console.log('Migrated legacy data to multi-account structure.');
+                            } else {
+                                // Load new structure
+                                this.accounts = parsed.accounts || [];
+                                this.currentAccountId = parsed.currentAccountId || (this.accounts.length ? this.accounts[0].id : null);
                             }
-                        } else { alert('Invalid JSON structure'); }
-                    } catch (err) { alert('Error reading file'); }
-                };
-                reader.readAsText(file);
-                event.target.value = '';
-            }
-        }))
-    });
-</script>
+                        } catch (e) {
+                            console.error('Data load error', e);
+                        }
+                    }
+
+                    // Create default account if empty
+                    if (this.accounts.length === 0) {
+                        this.createAccount('Main Account');
+                    }
+
+                    // Auto-save watchers
+                    this.$watch('accounts', () => this.persist());
+                    this.$watch('currentAccountId', () => this.persist());
+                },
+
+                persist() {
+                    localStorage.setItem('fxJournalData', JSON.stringify({
+                        accounts: this.accounts,
+                        currentAccountId: this.currentAccountId
+                    }));
+                },
+
+                // --- Multi-Account Getters ---
+                get activeAccount() {
+                    return this.accounts.find(a => a.id === this.currentAccountId) || this.accounts[0];
+                },
+
+                get trades() {
+                    return this.activeAccount ? this.activeAccount.trades : [];
+                },
+
+                // --- Account Management ---
+                createAccount(name = null) {
+                    const finalName = name || this.newAccountName;
+                    if (!finalName.trim()) return;
+
+                    const newId = crypto.randomUUID();
+                    this.accounts.push({
+                        id: newId,
+                        name: finalName,
+                        trades: [],
+                        config: JSON.parse(JSON.stringify(this.defaultConfig))
+                    });
+
+                    this.currentAccountId = newId;
+                    this.newAccountName = '';
+                },
+
+                switchAccount(id) {
+                    this.currentAccountId = id;
+                    this.activeTab = 'dashboard';
+                    const scroller = document.querySelector('.scroller');
+                    if (scroller) scroller.scrollTop = 0;
+                },
+
+                deleteAccount(id) {
+                    if (this.accounts.length <= 1) return alert('Cannot delete the last account.');
+                    if (confirm('Delete this account and all its trades permanently?')) {
+                        const idx = this.accounts.findIndex(a => a.id === id);
+                        this.accounts.splice(idx, 1);
+                        if (this.currentAccountId === id) {
+                            this.currentAccountId = this.accounts[0].id;
+                        }
+                    }
+                },
+
+                // --- UI Logic ---
+                toggleTheme() { this.darkMode = !this.darkMode; },
+
+                get inputClass() {
+                    return this.darkMode
+                        ? 'w-full bg-black border border-zinc-700 rounded-lg p-2.5 text-xs text-white focus:border-accent focus:outline-none placeholder-zinc-600 transition'
+                        : 'w-full bg-white border border-zinc-300 rounded-lg p-2.5 text-xs text-zinc-900 focus:border-accent focus:outline-none placeholder-zinc-400 transition';
+                },
+
+                handleShortcuts(e) {
+                    if (['INPUT', 'TEXTAREA', 'SELECT'].includes(e.target.tagName)) return;
+                    if (e.shiftKey) {
+                        switch (e.key.toLowerCase()) {
+                            case 'd': this.activeTab = 'dashboard'; break;
+                            case 'j': this.activeTab = 'journal'; break;
+                            case 'c': this.activeTab = 'calendar'; break;
+                            case 's': this.activeTab = 'settings'; break;
+                            case 'b': this.bottomBarOpen = !this.bottomBarOpen; break;
+                            case 'm': this.sidebarExpanded = !this.sidebarExpanded; break;
+                        }
+                    }
+                },
+
+                // --- Form Logic ---
+                addConfig(key, val) { if (val.trim()) this.activeAccount.config[key].push(val.trim()); },
+                removeConfig(key, idx) { this.activeAccount.config[key].splice(idx, 1); },
+
+                handlePairChange(e) {
+                    const val = e.target.value;
+                    this.form.isCustomPair = (val === 'custom');
+                    this.form.pair = !this.form.isCustomPair ? val : '';
+                },
+
+                toggleReason(item) {
+                    if (this.form.reasons.includes(item)) this.form.reasons = this.form.reasons.filter(i => i !== item);
+                    else this.form.reasons.push(item);
+                },
+
+                resetForm() {
+                    this.isEditing = false;
+                    this.tempPairSelect = '';
+                    this.form = {
+                        id: null, date: new Date().toISOString().split('T')[0], pair: '', isCustomPair: false,
+                        rr: null, risk: null, outcome: 'win', timeframe: '1H', tradeType: 'day', reasons: [], notes: ''
+                    };
+                },
+
+                saveTrade() {
+                    if (!this.form.pair && !this.tempPairSelect) return alert('Select a pair');
+                    if (this.tempPairSelect === 'custom' && !this.form.pair.trim()) return alert('Enter pair name');
+
+                    const tradeData = JSON.parse(JSON.stringify(this.form));
+                    const account = this.activeAccount;
+
+                    if (this.isEditing) {
+                        const index = account.trades.findIndex(t => t.id === this.form.id);
+                        if (index !== -1) account.trades[index] = tradeData;
+                    } else {
+                        tradeData.id = crypto.randomUUID();
+                        account.trades.push(tradeData);
+                    }
+                    this.resetForm();
+                    this.accounts = [...this.accounts]; // Trigger reactivity
+                },
+
+                getEnhancedPairStats() {
+                    const trades = this.trades;
+                    const stats = {};
+
+                    trades.forEach(t => {
+                        const p = t.pair.toUpperCase().trim();
+                        if (!stats[p]) {
+                            stats[p] = { name: p, profit: 0, wins: 0, losses: 0, total: 0, winRR: 0, lossRR: 0 };
+                        }
+                        const s = stats[p];
+                        const risk = parseFloat(t.risk) || 0;
+                        const rr = parseFloat(t.rr) || 0;
+                        s.total++;
+                        if (t.outcome === 'win') {
+                            s.wins++;
+                            s.profit += (risk * rr);
+                            s.winRR += rr;
+                        } else if (t.outcome === 'loss') {
+                            s.losses++;
+                            s.profit -= risk;
+                            s.lossRR += risk;
+                        }
+                    });
+
+                    return Object.values(stats).map(s => ({
+                        ...s,
+                        winRate: Math.round((s.wins / s.total) * 100) || 0,
+                        avgWinRR: s.wins > 0 ? (s.winRR / s.wins).toFixed(1) : 0,
+                        profitFormatted: s.profit.toFixed(2)
+                    })).sort((a, b) => b.profit - a.profit);
+                },
+                editTrade(trade) {
+                    this.form = JSON.parse(JSON.stringify(trade));
+                    this.isEditing = true;
+                    this.activeTab = 'journal';
+                    const knownPairs = ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'US30', 'NAS100', 'BTCUSD'];
+                    this.form.isCustomPair = !knownPairs.includes(trade.pair);
+                    this.tempPairSelect = this.form.isCustomPair ? 'custom' : trade.pair;
+                    const scroller = document.querySelector('.scroller');
+                    if (scroller) scroller.scrollTop = 0;
+                },
+                // --- Detailed Statistics Breakdown ---
+
+
+                deleteTrade(id) {
+                    if (confirm('Delete trade?')) {
+                        const account = this.activeAccount;
+                        account.trades = account.trades.filter(t => t.id !== id);
+                        this.accounts = [...this.accounts];
+                    }
+                },
+
+                // --- Analysis Helpers ---
+                getPnL(trade) {
+                    const risk = parseFloat(trade.risk) || 0;
+                    if (trade.outcome === 'loss') return -risk;
+                    if (trade.outcome === 'win') return risk * (parseFloat(trade.rr) || 0);
+                    return 0;
+                },
+
+                get sortedTrades() {
+                    return [...this.trades].sort((a, b) => new Date(b.date) - new Date(a.date));
+                },
+
+                // --- Statistics ---
+                get dashboardStats() {
+                    const total = this.trades.length;
+                    const wins = this.trades.filter(t => t.outcome === 'win').length;
+                    const winRate = total ? ((wins / total) * 100).toFixed(1) : 0;
+                    const netPnL = this.trades.reduce((acc, t) => acc + this.getPnL(t), 0).toFixed(2);
+
+                    return [
+                        { label: 'Total Trades', value: total },
+                        { label: 'Win Rate', value: winRate + '%', colorClass: winRate >= 50 ? 'text-success' : 'text-danger' },
+                        { label: 'Net Profit', value: (netPnL > 0 ? '+' : '') + netPnL + '%', colorClass: netPnL >= 0 ? 'text-success' : 'text-danger' },
+                        { label: 'Avg Risk', value: (this.trades.reduce((a, t) => a + (t.risk || 0), 0) / (total || 1)).toFixed(2) + '%' },
+                        { label: 'Avg R:R', value: (this.trades.reduce((a, t) => a + (t.rr || 0), 0) / (total || 1)).toFixed(2) + 'R' },
+                    ];
+                },
+
+                get detailedStats() {
+                    const wins = this.trades.filter(t => t.outcome === 'win');
+                    const losses = this.trades.filter(t => t.outcome === 'loss');
+
+                    const avgWin = wins.length ? (wins.reduce((acc, t) => acc + this.getPnL(t), 0) / wins.length).toFixed(2) : '0.00';
+                    const avgLoss = losses.length ? (losses.reduce((acc, t) => acc + this.getPnL(t), 0) / losses.length).toFixed(2) : '0.00';
+
+                    const bestTrade = wins.length ? Math.max(...wins.map(t => this.getPnL(t))).toFixed(2) : '0.00';
+                    const worstTrade = losses.length ? Math.min(...losses.map(t => this.getPnL(t))).toFixed(2) : '0.00';
+
+                    return {
+                        win: { count: wins.length, avg: `+${avgWin}%`, best: `+${bestTrade}%` },
+                        loss: { count: losses.length, avg: `${avgLoss}%`, worst: `${worstTrade}%` }
+                    };
+                },
+
+                get timeframeData() {
+                    const counts = {};
+                    this.trades.forEach(t => {
+                        const tf = t.timeframe || 'UNK';
+                        counts[tf] = (counts[tf] || 0) + 1;
+                    });
+                    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+                    const maxVal = sorted.length ? sorted[0][1] : 1;
+                    return sorted.map(([label, count]) => ({
+                        label, count, pct: (count / maxVal) * 100
+                    }));
+                },
+
+                get extendedStats() {
+                    if (!this.trades.length) return null;
+
+                    const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                    let wins = 0, losses = 0, bes = 0;
+                    let grossProfit = 0, grossLoss = 0, totalPnl = 0, totalR = 0;
+                    let currentStreak = 0, maxWinStreak = 0, maxLossStreak = 0;
+                    let streakCount = 0, prevOutcome = '';
+                    let peak = 0, maxDD = 0, currentEquity = 0;
+
+                    sorted.forEach(t => {
+                        const pnl = this.getPnL(t);
+                        totalPnl += pnl;
+                        if (t.risk > 0) totalR += (pnl / t.risk);
+
+                        if (t.outcome === 'win') {
+                            wins++;
+                            grossProfit += pnl;
+                        } else if (t.outcome === 'loss') {
+                            losses++;
+                            grossLoss += Math.abs(pnl);
+                        } else {
+                            bes++;
+                        }
+
+                        // Streak Logic
+                        if (t.outcome === prevOutcome) {
+                            streakCount++;
+                        } else {
+                            streakCount = 1;
+                            prevOutcome = t.outcome;
+                        }
+
+                        if (t.outcome === 'win' && streakCount > maxWinStreak) maxWinStreak = streakCount;
+                        if (t.outcome === 'loss' && streakCount > maxLossStreak) maxLossStreak = streakCount;
+
+                        // Drawdown Logic (Absolute %)
+                        currentEquity += pnl;
+                        if (currentEquity > peak) peak = currentEquity;
+                        const dd = peak - currentEquity;
+                        if (dd > maxDD) maxDD = dd;
+                    });
+
+                    // Current streak calc
+                    let curStreakCount = 0;
+                    let curStreakType = '';
+                    if (sorted.length > 0) {
+                        const last = sorted[sorted.length - 1];
+                        curStreakType = last.outcome;
+                        for (let i = sorted.length - 1; i >= 0; i--) {
+                            if (sorted[i].outcome === curStreakType) curStreakCount++;
+                            else break;
+                        }
+                    }
+
+                    const count = sorted.length;
+                    const winRate = (wins / count) * 100;
+                    const lossRate = (losses / count);
+                    const avgWin = wins > 0 ? grossProfit / wins : 0;
+                    const avgLoss = losses > 0 ? grossLoss / losses : 0;
+                    const profitFactor = grossLoss === 0 ? grossProfit : grossProfit / grossLoss;
+                    const ev = ((winRate / 100) * avgWin) - (lossRate * avgLoss);
+                    const avgR = totalR / count;
+                    const recFactor = maxDD === 0 ? (totalPnl > 0 ? 100 : 0) : (totalPnl / maxDD);
+
+                    return [
+                        { label: 'Total Trades', value: count },
+                        { label: 'Winning Trades', value: wins, class: 'text-success' },
+                        { label: 'Losing Trades', value: losses, class: 'text-danger' },
+                        { label: 'Breakeven', value: bes, class: 'text-zinc-500' },
+                        { label: 'Win Rate', value: winRate.toFixed(1) + '%' },
+                        { label: 'Total PnL', value: (totalPnl > 0 ? '+' : '') + totalPnl.toFixed(2) + '%', class: totalPnl >= 0 ? 'text-success' : 'text-danger' },
+                        { label: 'Avg Win', value: '+' + avgWin.toFixed(2) + '%', class: 'text-success' },
+                        { label: 'Avg Loss', value: '-' + avgLoss.toFixed(2) + '%', class: 'text-danger' },
+                        { label: 'Profit Factor', value: profitFactor.toFixed(2) },
+                        { label: 'Exp. Value (EV)', value: (ev > 0 ? '+' : '') + ev.toFixed(2) + '%' },
+                        { label: 'Max Drawdown', value: '-' + maxDD.toFixed(2) + '%', class: 'text-danger' },
+                        { label: 'Avg R-Multiple', value: avgR.toFixed(2) + 'R' },
+                        { label: 'Current Streak', value: curStreakCount + ' ' + curStreakType.toUpperCase() },
+                        { label: 'Best Win Streak', value: maxWinStreak, class: 'text-success' },
+                        { label: 'Worst Loss Streak', value: maxLossStreak, class: 'text-danger' },
+                        { label: 'Recovery Factor', value: recFactor.toFixed(2) }
+                    ];
+                },
+
+                // --- Chart Logic ---
+                get equityChartData() {
+                    if (this.trades.length === 0) return { path: '', area: '' };
+                    const sorted = [...this.trades].sort((a, b) => new Date(a.date) - new Date(b.date));
+                    let acc = 0;
+                    const points = sorted.map(t => { acc += this.getPnL(t); return acc; });
+                    points.unshift(0);
+                    const min = Math.min(...points);
+                    const max = Math.max(...points);
+                    const range = max - min || 1;
+                    const width = 1000, height = 1000, padding = 50, availHeight = height - (padding * 2);
+
+                    const coordinates = points.map((val, index) => {
+                        const x = (index / (points.length - 1)) * width;
+                        const normalizedY = (val - min) / range;
+                        return `${x},${height - padding - (normalizedY * availHeight)}`;
+                    });
+
+                    const pathCmd = `M ${coordinates.join(' L ')}`;
+                    return { path: pathCmd, area: `${pathCmd} L ${width},${height} L 0,${height} Z` };
+                },
+
+                getBarData(outcome, configKey) {
+                    const counts = {};
+                    this.trades.filter(t => t.outcome === outcome).forEach(t => {
+                        t.reasons.forEach(r => counts[r] = (counts[r] || 0) + 1);
+                    });
+                    const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                    if (sorted.length === 0) return [];
+                    const maxVal = sorted[0][1];
+                    return sorted.map(([label, count]) => ({ label, count, pct: (count / maxVal) * 100 }));
+                },
+
+                getTypePercentage(type) {
+                    if (!this.trades.length) return 0;
+                    const count = this.trades.filter(t => t.tradeType === type).length;
+                    return Math.round((count / this.trades.length) * 100);
+                },
+
+
+                // --- Daily Calendar Logic ---
+                get calendarMonthLabel() { return this.currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' }); },
+                changeMonth(offset) { this.currentMonth = new Date(this.currentMonth.getFullYear(), this.currentMonth.getMonth() + offset, 1); },
+                isToday(dateStr) { return dateStr === new Date().toISOString().split('T')[0]; },
+                getTradesForDate(dateStr) { return this.trades.filter(t => t.date === dateStr); },
+
+                get calendarGrid() {
+                    const year = this.currentMonth.getFullYear();
+                    const month = this.currentMonth.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    const startDay = new Date(year, month, 1).getDay(); // 0=Sun
+                    const prevMonthDays = new Date(year, month, 0).getDate();
+                    const grid = [];
+
+                    for (let i = startDay - 1; i >= 0; i--) {
+                        grid.push({ dayNum: prevMonthDays - i, isCurrentMonth: false, dateStr: '', key: 'prev' + i });
+                    }
+
+                    for (let i = 1; i <= daysInMonth; i++) {
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                        const dayTrades = this.trades.filter(t => t.date === dateStr);
+                        const dayPnL = dayTrades.reduce((acc, t) => acc + this.getPnL(t), 0);
+                        grid.push({
+                            dayNum: i,
+                            isCurrentMonth: true,
+                            dateStr,
+                            hasTrades: dayTrades.length > 0,
+                            count: dayTrades.length,
+                            pnl: dayPnL,
+                            key: 'curr' + i
+                        });
+                    }
+                    return grid;
+                },
+
+                get calendarStats() {
+                    const m = this.currentMonth.getMonth() + 1;
+                    const y = this.currentMonth.getFullYear();
+                    const monthTrades = this.trades.filter(t => {
+                        const d = new Date(t.date);
+                        return d.getMonth() + 1 === m && d.getFullYear() === y;
+                    });
+
+                    return {
+                        count: monthTrades.length,
+                        pnl: monthTrades.reduce((acc, t) => acc + this.getPnL(t), 0)
+                    };
+                },
+
+                get maxMonthlyPnl() {
+                    if (!this.calendarGrid) return 0;
+                    const profits = this.calendarGrid.filter(d => d.hasTrades && d.pnl > 0).map(d => d.pnl);
+                    return profits.length > 0 ? Math.max(...profits) : 0;
+                },
+
+                getDayColorClass(item) {
+                    const pnl = item.pnl;
+                    const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
+                    const threshold = 1.0;
+
+                    if (isBestDay) return 'bg-amber-400 border-amber-500';
+                    if (pnl > 0) {
+                        if (pnl >= threshold) return 'bg-emerald-600 border-emerald-700';
+                        return this.darkMode ? 'bg-emerald-900/40 border-emerald-900' : 'bg-emerald-100 border-emerald-200';
+                    }
+                    if (pnl < 0) {
+                        if (pnl <= -threshold) return 'bg-rose-600 border-rose-700';
+                        return this.darkMode ? 'bg-rose-900/40 border-rose-900' : 'bg-rose-100 border-rose-200';
+                    }
+                    return '';
+                },
+
+                getTextContrastColor(item) {
+                    const pnl = item.pnl;
+                    const isBestDay = (pnl === this.maxMonthlyPnl) && (pnl > 0);
+                    const threshold = 1.0;
+
+                    if (isBestDay) return 'text-black';
+                    if (pnl >= threshold || pnl <= -threshold) return 'text-white';
+                    if (pnl > 0) return this.darkMode ? 'text-emerald-400' : 'text-emerald-800';
+                    if (pnl < 0) return this.darkMode ? 'text-rose-400' : 'text-rose-800';
+                    return this.darkMode ? 'text-zinc-400' : 'text-zinc-500';
+                },
+
+                // --- Import/Export ---
+                exportData() {
+                    const data = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({
+                        accounts: this.accounts,
+                        currentAccountId: this.currentAccountId
+                    }));
+                    const el = document.createElement('a');
+                    el.setAttribute("href", data);
+                    el.setAttribute("download", `fx_journal_full_${new Date().toISOString().split('T')[0]}.json`);
+                    document.body.appendChild(el);
+                    el.click();
+                    el.remove();
+                },
+
+                importData(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const parsed = JSON.parse(e.target.result);
+                            if (parsed.accounts && Array.isArray(parsed.accounts)) {
+                                if (confirm(`Overwrite all data? Found ${parsed.accounts.length} accounts.`)) {
+                                    this.accounts = parsed.accounts;
+                                    this.currentAccountId = parsed.currentAccountId || this.accounts[0].id;
+                                    alert('Import Successful');
+                                }
+                            } else { alert('Invalid JSON structure'); }
+                        } catch (err) { alert('Error reading file'); }
+                    };
+                    reader.readAsText(file);
+                    event.target.value = '';
+                }
+            }))
+        });
+    </script>
 </body>
 
 </html>

@@ -198,6 +198,29 @@
         */
             animation: liquid-spin 9s linear infinite reverse;
         }
+        /* Animated glow for the Best Day of the month */
+.gradient-animated {
+    background-size: 200% 200%;
+    animation: smoothGradient 4s ease infinite;
+}
+
+@keyframes smoothGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Custom Scrollbar for the Trade Modal */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #3f3f46;
+    border-radius: 10px;
+}
     </style>
 </head>
 
@@ -565,43 +588,96 @@
                 <!-- DASHBOARD -->
                 <section x-show="activeTab === 'dashboard'" x-transition.opacity.duration.300ms class="space-y-6">
 
+
+                    <!-- KPI Cards -->
                     <!-- KPI Cards -->
                     <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
                         <template x-for="(stat, index) in dashboardStats" :key="index">
-                            <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                                class="group relative p-4 rounded-xl border shadow-sm flex flex-col justify-between h-24 overflow-hidden transition-all duration-300 hover:border-accent/50">
+                            <div :class="darkMode ? 'bg-zinc-900/50 border-white/10 ring-1 ring-white/5' : 'bg-white border-zinc-200 shadow-sm shadow-zinc-200/50'"
+                                class="group relative p-5 rounded-2xl border backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl flex flex-col justify-between h-32 overflow-hidden">
+                                <!-- Decorative Mouse Glow (Dark Mode only) -->
+                                <div x-show="darkMode"
+                                    class="absolute -inset-px bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-2xl pointer-events-none">
+                                </div>
 
-                                <!-- Label -->
-                                <p class="text-[10px] uppercase font-bold tracking-widest text-zinc-500 z-10"
-                                    x-text="stat.label"></p>
+                                <div class="relative z-10">
+                                    <!-- Header: Label & Icon -->
+                                    <div class="flex items-center justify-between mb-2">
+                                        <p class="text-[10px] uppercase font-bold tracking-[0.15em] text-zinc-500"
+                                            x-text="stat.label"></p>
 
-                                <!-- Value -->
-                                <p class="text-2xl font-bold truncate z-10"
-                                    :class="stat.colorClass || (darkMode ? 'text-white' : 'text-zinc-900')"
-                                    x-text="stat.value">
-                                </p>
-
-                                <!-- Win Rate Visual Bar (Only renders if label is 'Win Rate') -->
-                                <template x-if="stat.label === 'Win Rate'">
-                                    <div
-                                        class="absolute right-0 top-0 bottom-0 w-1.5 h-full flex flex-col bg-zinc-200 dark:bg-zinc-800 border-l dark:border-zinc-800">
-                                        <!-- Red / Loss Portion (Top) -->
-                                        <!-- We calculate height as (100 - value) -->
-                                        <div class="w-full bg-rose-500/80 transition-all duration-1000 ease-out"
-                                            :style="`height: ${100 - parseFloat(stat.value || 0)}%`">
+                                        <!-- Dynamic Icon based on label -->
+                                        <div :class="darkMode ? 'text-zinc-600' : 'text-zinc-400'"
+                                            class="transition-colors group-hover:text-accent">
+                                            <template
+                                                x-if="stat.label.includes('Profit') || stat.label.includes('PnL')">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                                                    </path>
+                                                </svg>
+                                            </template>
+                                            <template x-if="stat.label.includes('Trades')">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                                                    </path>
+                                                </svg>
+                                            </template>
                                         </div>
+                                    </div>
 
-                                        <!-- Green / Win Portion (Bottom) -->
-                                        <!-- We calculate height as value -->
-                                        <div class="w-full bg-emerald-500 transition-all duration-1000 ease-out"
-                                            :style="`height: ${parseFloat(stat.value || 0)}%`">
+                                    <!-- Main Value & Trend -->
+                                    <div class="flex items-baseline gap-2">
+                                        <p class="text-2xl font-black tracking-tighter"
+                                            :class="stat.colorClass || (darkMode ? 'text-white' : 'text-zinc-900')"
+                                            x-text="stat.value"></p>
+
+                                        <!-- Optional Trend badge -->
+                                        <template x-if="stat.trend">
+                                            <span
+                                                :class="stat.trend > 0 ? 'text-emerald-500 bg-emerald-500/10' : 'text-rose-500 bg-rose-500/10'"
+                                                class="text-[9px] px-1.5 py-0.5 rounded-md font-bold">
+                                                <span x-text="stat.trend > 0 ? '+' : ''"></span><span
+                                                    x-text="stat.trend + '%'"></span>
+                                            </span>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <!-- Footer Meta Text -->
+                                <p class="text-[9px] font-medium text-zinc-500 mt-2 z-10"
+                                    x-text="stat.subtext || 'Last 30 days'"></p>
+
+                                <!-- Refined Win Rate Gauge (Vertical Liquid) -->
+                                <template x-if="stat.label === 'Win Rate'">
+                                    <div class="absolute right-0 top-0 bottom-0 w-2 h-full flex flex-col border-l"
+                                        :class="darkMode ? 'bg-zinc-950/40 border-white/5' : 'bg-zinc-50 border-zinc-100'">
+
+                                        <!-- Loss Area -->
+                                        <div class="w-full bg-rose-500/10 transition-all duration-1000 ease-out"
+                                            :style="`height: ${100 - parseFloat(stat.value)}%`" title="Loss Rate"></div>
+
+                                        <!-- Win Area -->
+                                        <div class="w-full bg-emerald-500 transition-all duration-1000 ease-out relative group-hover:brightness-110 shadow-[0_-4px_10px_rgba(16,185,129,0.2)]"
+                                            :style="`height: ${parseFloat(stat.value)}%`" title="Win Rate">
+                                            <!-- Glass Shine on the Gauge -->
+                                            <div class="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent">
+                                            </div>
+                                            <!-- Animated Pulse at the top of the gauge -->
+                                            <div class="absolute top-0 left-0 right-0 h-1 bg-white/40 animate-pulse">
+                                            </div>
                                         </div>
                                     </div>
                                 </template>
 
-                                <!-- Subtle background glow for Win Rate card -->
+                                <!-- Background Gradient Interaction -->
                                 <template x-if="stat.label === 'Win Rate'">
-                                    <div class="absolute inset-0 pointer-events-none opacity-10"
+                                    <div class="absolute inset-0 pointer-events-none transition-all duration-700 opacity-[0.03] group-hover:opacity-[0.08]"
                                         :class="parseFloat(stat.value) >= 50 ? 'bg-gradient-to-br from-emerald-500 to-transparent' : 'bg-gradient-to-br from-rose-500 to-transparent'">
                                     </div>
                                 </template>
@@ -610,312 +686,469 @@
                     </div>
 
                     <!-- Charts Section -->
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Charts Section -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                         <!-- Equity Chart -->
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="p-6 rounded-xl border shadow-sm col-span-2 flex flex-col max-h-[350px] ">
-                            <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-sm font-bold" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">
-                                    Account
-                                    Growth</h3>
-                                <div class="flex items-center gap-2 text-xs">
-                                    <span class="w-2 h-2 rounded-full bg-accent"></span>
-                                    <span class="text-zinc-500">Cumulative PnL%</span>
+                        <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800/50' : 'bg-white border-zinc-200 shadow-sm'"
+                            class="p-6 rounded-2xl border backdrop-blur-md col-span-2 flex flex-col h-[350px] transition-all duration-300">
+
+                            <div class="flex justify-between items-center mb-6">
+                                <div>
+                                    <h3 class="text-sm font-bold tracking-tight"
+                                        :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">Account Growth</h3>
+                                    <p class="text-[10px] text-zinc-500 uppercase tracking-widest">Performance Metrics
+                                    </p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                                    <span class="text-[11px] font-bold text-zinc-500">PnL %</span>
                                 </div>
                             </div>
-                            <div class="relative flex-1 w-full h-64">
+
+                            <div class="relative flex-1 w-full rounded-xl overflow-hidden">
+                                <!-- Grid Pattern -->
+                                <div class="absolute inset-0 opacity-[0.03]" :class="darkMode ? 'invert' : ''"
+                                    style="background-image: radial-gradient(#000 1px, transparent 1px); background-size: 20px 20px;">
+                                </div>
+
                                 <template x-if="trades.length > 0">
-                                    <svg class="w-full h-full block" viewBox="0 0 1000 1000" preserveAspectRatio="none">
+                                    <svg class="w-full h-full block relative z-10" viewBox="0 0 1000 1000"
+                                        preserveAspectRatio="none">
                                         <defs>
                                             <linearGradient id="chartGradient" x1="0" x2="0" y1="0" y2="1">
-                                                <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.3"></stop>
-                                                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0"></stop>
+                                                <stop offset="0%" stop-color="#3b82f6"
+                                                    :stop-opacity="darkMode ? '0.3' : '0.1'"></stop>
+                                                <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"></stop>
                                             </linearGradient>
                                         </defs>
-                                        <line x1="0" y1="500" x2="1000" y2="500" stroke="currentColor"
-                                            stroke-opacity="0.1" stroke-dasharray="4" />
-                                        <line x1="0" y1="0" x2="1000" y2="0" stroke="currentColor"
-                                            stroke-opacity="0.1" />
-                                        <line x1="0" y1="1000" x2="1000" y2="1000" stroke="currentColor"
-                                            stroke-opacity="0.1" />
-                                        <path :d="equityChartData.area" fill="url(#chartGradient)" stroke="none" />
+                                        <line x1="0" y1="500" x2="1000" y2="500" :stroke="darkMode ? 'white' : 'black'"
+                                            stroke-opacity="0.05" stroke-dasharray="4" />
+                                        <path :d="equityChartData.area" fill="url(#chartGradient)" />
                                         <path :d="equityChartData.path" fill="none" stroke="#3b82f6" stroke-width="3"
-                                            vector-effect="non-scaling-stroke" class="drop-shadow-lg" />
+                                            vector-effect="non-scaling-stroke" />
                                     </svg>
                                 </template>
-                                <div x-show="trades.length === 0"
-                                    class="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">
-                                    No trades logged yet
-                                </div>
                             </div>
                         </div>
 
-                        <!-- Manual Trade Type Bar Chart -->
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="p-6 rounded-xl border shadow-sm flex flex-col">
+                        <!-- Distribution Chart -->
+                        <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800/50' : 'bg-white border-zinc-200 shadow-sm'"
+                            class="p-6 rounded-2xl border backdrop-blur-md flex flex-col transition-all duration-300">
 
-                            <h3 class="text-sm font-bold mb-6" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">
-                                Distribution
-                            </h3>
+                            <h3 class="text-sm font-bold mb-1" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">
+                                Distribution</h3>
+                            <p class="text-[10px] text-zinc-500 uppercase tracking-widest mb-8">Trade Strategy Split</p>
 
-                            <div class="flex-1 flex items-end justify-center gap-6 px-2">
+                            <div class="flex-1 flex items-end justify-between gap-4">
                                 <template x-for="type in ['scalp', 'day', 'swing']" :key="type">
                                     <div class="flex flex-col items-center gap-3 group w-full h-full justify-end">
 
-                                        <!-- Percentage Label -->
-                                        <span class="text-xs font-mono font-bold z-10 transition-all duration-300"
+                                        <!-- Value Label -->
+                                        <span
+                                            class="text-[10px] font-mono font-bold transition-all duration-300 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0"
                                             :class="darkMode ? 'text-zinc-400' : 'text-zinc-600'"
                                             x-text="getTypePercentage(type) + '%'"></span>
 
-                                        <!-- The Track (Container) -->
-                                        <!-- We pass the background color as a CSS variable (--liquid-bg) so the mask knows what color to be -->
-                                        <div class="w-full rounded-2xl relative h-full shadow-inner liquid-container"
-                                            :class="darkMode ? 'bg-zinc-800' : 'bg-zinc-100'"
-                                            :style="darkMode ? '--liquid-bg: #27272a' : '--liquid-bg: #f4f4f5'">
+                                        <!-- Capsule Track -->
+                                        <div class="w-full rounded-full relative h-44 shadow-inner overflow-hidden border transition-colors duration-300"
+                                            :class="darkMode ? 'bg-zinc-950/50 border-white/5' : 'bg-zinc-100 border-zinc-200'">
 
-                                            <!-- The Liquid (Colored Bar) -->
-                                            <div class="liquid-fill w-full transition-all duration-1000 ease-in-out"
+                                            <!-- Liquid Fill -->
+                                            <div class="absolute bottom-0 w-full transition-all duration-1000 cubic-bezier(0.4, 0, 0.2, 1)"
                                                 :class="{
-                            'bg-gradient-to-t from-blue-600 to-blue-400': type === 'scalp',
-                            'bg-gradient-to-t from-emerald-600 to-emerald-400': type === 'day',
-                            'bg-gradient-to-t from-amber-600 to-amber-400': type === 'swing'
-                        }" :style="`height: ${getTypePercentage(type)}%`">
-                                            </div>
+                                'bg-gradient-to-t from-blue-600 to-blue-400': type === 'scalp',
+                                'bg-gradient-to-t from-emerald-600 to-emerald-400': type === 'day',
+                                'bg-gradient-to-t from-amber-600 to-amber-400': type === 'swing'
+                            }" :style="`height: ${getTypePercentage(type)}%`">
 
+                                                <!-- Shine effect -->
+                                                <div class="w-full h-full bg-white/10 opacity-50"></div>
+                                            </div>
                                         </div>
 
                                         <!-- Label -->
-                                        <span class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider"
+                                        <span
+                                            class="text-[10px] uppercase font-black text-zinc-500 tracking-wider group-hover:text-blue-500 transition-colors"
                                             x-text="type"></span>
                                     </div>
                                 </template>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Analysis Bars -->
+                    <!-- Analysis Bars Container -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="p-6 rounded-xl border shadow-sm">
-                            <h3 class="text-sm font-bold mb-4" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">Top
-                                Win
-                                Factors</h3>
-                            <div class="space-y-3">
-                                <template x-for="item in getBarData('win', 'profitConfluences')" :key="item.label">
+
+                        <!-- Card: Top Win Factors -->
+                        <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800 backdrop-blur-md shadow-xl' : 'bg-white border-zinc-200 shadow-sm'"
+                            class="p-6 rounded-3xl border transition-all duration-500">
+
+                            <div class="flex items-center justify-between mb-8">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                        </svg>
+                                    </div>
                                     <div>
-                                        <div class="flex justify-between text-xs mb-1">
-                                            <span x-text="item.label"></span>
-                                            <span x-text="item.count"></span>
+                                        <h3 class="text-sm font-bold tracking-tight"
+                                            :class="darkMode ? 'text-zinc-100' : 'text-zinc-800'">Top Win Factors</h3>
+                                        <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-medium">
+                                            Profit Confluences</p>
+                                    </div>
+                                </div>
+                                <!-- Status Badge -->
+                                <span
+                                    class="text-[10px] px-2 py-1 rounded-lg border border-emerald-500/20 bg-emerald-500/5 text-emerald-500 font-bold uppercase tracking-tighter">Strength</span>
+                            </div>
+
+                            <div class="space-y-6">
+                                <template x-for="item in getBarData('win', 'profitConfluences')" :key="item.label">
+                                    <div class="relative">
+                                        <div class="flex justify-between items-end mb-2">
+                                            <span class="text-xs font-bold"
+                                                :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'"
+                                                x-text="item.label"></span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full"
+                                                    :class="darkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-100 text-zinc-600'"
+                                                    x-text="item.count + ' Trades'"></span>
+                                                <span class="text-[11px] font-black"
+                                                    :class="darkMode ? 'text-emerald-400' : 'text-emerald-600'"
+                                                    x-text="item.pct + '%'"></span>
+                                            </div>
                                         </div>
+
                                         <div
-                                            class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2 overflow-hidden">
-                                            <div class="bg-success h-2 rounded-full" :style="`width: ${item.pct}%`">
+                                            class="relative h-3 w-full bg-zinc-100 dark:bg-zinc-800/80 rounded-full overflow-hidden border border-zinc-200/50 dark:border-zinc-700/30 shadow-inner">
+                                            <!-- Animated Gradient Fill -->
+                                            <div class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-emerald-600 via-emerald-400 to-teal-300"
+                                                :style="`width: ${item.pct}%`"
+                                                style="box-shadow: 0 0 12px rgba(16, 185, 129, 0.25);">
+                                                <!-- Subtle glass shine effect (non-hover) -->
+                                                <div
+                                                    class="w-full h-full opacity-30 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.4)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_4s_infinite_linear]">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </template>
-                                <div x-show="!trades.some(t=>t.outcome==='win')" class="text-xs text-zinc-500 italic">No
-                                    winning
-                                    trades yet.</div>
+
+                                <!-- Empty State -->
+                                <div x-show="!trades.some(t=>t.outcome==='win')"
+                                    class="flex flex-col items-center justify-center py-10 border-2 border-dashed rounded-3xl"
+                                    :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+                                    <p class="text-xs text-zinc-500 font-medium italic">No winning data analyzed yet</p>
+                                </div>
                             </div>
                         </div>
 
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="p-6 rounded-xl border shadow-sm">
-                            <h3 class="text-sm font-bold mb-4" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">Top
-                                Loss
-                                Reasons</h3>
-                            <div class="space-y-3">
-                                <template x-for="item in getBarData('loss', 'lossReasons')" :key="item.label">
+                        <!-- Card: Top Loss Reasons -->
+                        <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800 backdrop-blur-md shadow-xl' : 'bg-white border-zinc-200 shadow-sm'"
+                            class="p-6 rounded-3xl border transition-all duration-500">
+
+                            <div class="flex items-center justify-between mb-8">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+                                        <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                                        </svg>
+                                    </div>
                                     <div>
-                                        <div class="flex justify-between text-xs mb-1">
-                                            <span x-text="item.label"></span>
-                                            <span x-text="item.count"></span>
+                                        <h3 class="text-sm font-bold tracking-tight"
+                                            :class="darkMode ? 'text-zinc-100' : 'text-zinc-800'">Loss Reasons</h3>
+                                        <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-medium">
+                                            Weakness Analysis</p>
+                                    </div>
+                                </div>
+                                <!-- Status Badge -->
+                                <span
+                                    class="text-[10px] px-2 py-1 rounded-lg border border-rose-500/20 bg-rose-500/5 text-rose-500 font-bold uppercase tracking-tighter">Impact</span>
+                            </div>
+
+                            <div class="space-y-6">
+                                <template x-for="item in getBarData('loss', 'lossReasons')" :key="item.label">
+                                    <div class="relative">
+                                        <div class="flex justify-between items-end mb-2">
+                                            <span class="text-xs font-bold"
+                                                :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'"
+                                                x-text="item.label"></span>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full"
+                                                    :class="darkMode ? 'bg-zinc-800 text-zinc-400' : 'bg-zinc-100 text-zinc-600'"
+                                                    x-text="item.count + ' Trades'"></span>
+                                                <span class="text-[11px] font-black"
+                                                    :class="darkMode ? 'text-rose-400' : 'text-rose-600'"
+                                                    x-text="item.pct + '%'"></span>
+                                            </div>
                                         </div>
+
                                         <div
-                                            class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-full h-2 overflow-hidden">
-                                            <div class="bg-danger h-2 rounded-full" :style="`width: ${item.pct}%`">
+                                            class="relative h-3 w-full bg-zinc-100 dark:bg-zinc-800/80 rounded-full overflow-hidden border border-zinc-200/50 dark:border-zinc-700/30 shadow-inner">
+                                            <!-- Animated Gradient Fill -->
+                                            <div class="absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out bg-gradient-to-r from-rose-600 via-rose-400 to-orange-400"
+                                                :style="`width: ${item.pct}%`"
+                                                style="box-shadow: 0 0 12px rgba(244, 63, 94, 0.25);">
+                                                <!-- Subtle glass shine effect (non-hover) -->
+                                                <div
+                                                    class="w-full h-full opacity-20 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.4)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_4s_infinite_linear]">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </template>
-                                <div x-show="!trades.some(t=>t.outcome==='loss')" class="text-xs text-zinc-500 italic">
-                                    No losing
-                                    trades yet.</div>
+
+                                <!-- Empty State -->
+                                <div x-show="!trades.some(t=>t.outcome==='loss')"
+                                    class="flex flex-col items-center justify-center py-10 border-2 border-dashed rounded-3xl"
+                                    :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+                                    <p class="text-xs text-zinc-500 font-medium italic">Clean slate! No losses detected
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
 
+                    <style>
+                        /* Continuous background shimmer for a "high-end" feel without hover */
+                        @keyframes shimmer {
+                            0% {
+                                background-position: -200% 0;
+                            }
+
+                            100% {
+                                background-position: 200% 0;
+                            }
+                        }
+                    </style>
+
                     <!-- NEW SECTION: Performance Summary -->
+                    <!-- Performance Summary Section -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-                        <!-- Profitable Trades -->
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="p-6 rounded-xl border shadow-sm relative overflow-hidden">
-                            <div class="absolute top-0 right-0 p-4 opacity-10">
-                                <svg class="w-24 h-24 text-success" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11.586 11l2.293-2.293H12z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <h3 class="text-sm font-bold mb-4 text-success">Profitable Trades</h3>
-                            <div class="space-y-4 relative z-10">
-                                <div>
-                                    <p class="text-xs text-zinc-500 uppercase tracking-wider">Count</p>
-                                    <p class="text-2xl font-bold" x-text="detailedStats.win.count"></p>
+                        <!-- Card: Profitable Trades -->
+                        <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800 backdrop-blur-md shadow-xl' : 'bg-white border-zinc-200 shadow-sm'"
+                            class="p-6 rounded-3xl border flex flex-col justify-between h-full transition-all duration-500">
+
+                            <div>
+                                <div class="flex items-center gap-3 mb-6">
+                                    <div class="p-2.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-xs font-black uppercase tracking-widest text-emerald-500">Profitable
+                                    </h3>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <p class="text-[10px] text-zinc-500 uppercase">Avg Win</p>
-                                        <p class="text-sm font-mono font-bold text-success"
-                                            x-text="detailedStats.win.avg"></p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[10px] text-zinc-500 uppercase">Best Trade</p>
-                                        <p class="text-sm font-mono font-bold text-success"
-                                            x-text="detailedStats.win.best"></p>
-                                    </div>
+
+                                <div class="mb-6">
+                                    <p class="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter mb-1">Trade
+                                        Count</p>
+                                    <p class="text-4xl font-black font-mono tracking-tighter"
+                                        :class="darkMode ? 'text-white' : 'text-zinc-900'"
+                                        x-text="detailedStats.win.count"></p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                <div>
+                                    <p class="text-[9px] text-zinc-500 uppercase font-bold mb-1">Avg Win</p>
+                                    <p class="text-sm font-mono font-bold text-emerald-500"
+                                        x-text="detailedStats.win.avg"></p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] text-zinc-500 uppercase font-bold mb-1">Best Trade</p>
+                                    <p class="text-sm font-mono font-bold text-emerald-400"
+                                        x-text="detailedStats.win.best"></p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Loss Trades -->
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="p-6 rounded-xl border shadow-sm relative overflow-hidden">
-                            <div class="absolute top-0 right-0 p-4 opacity-10">
-                                <svg class="w-24 h-24 text-danger" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd"
-                                        d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L9 14.586V3a1 1 0 012 0v11.586l4.293-4.293a1 1 0 011.414 0z"
-                                        clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                            <h3 class="text-sm font-bold mb-4 text-danger">Loss Trades</h3>
-                            <div class="space-y-4 relative z-10">
-                                <div>
-                                    <p class="text-xs text-zinc-500 uppercase tracking-wider">Count</p>
-                                    <p class="text-2xl font-bold" x-text="detailedStats.loss.count"></p>
+                        <!-- Card: Loss Trades -->
+                        <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800 backdrop-blur-md shadow-xl' : 'bg-white border-zinc-200 shadow-sm'"
+                            class="p-6 rounded-3xl border flex flex-col justify-between h-full transition-all duration-500">
+
+                            <div>
+                                <div class="flex items-center gap-3 mb-6">
+                                    <div class="p-2.5 rounded-2xl bg-rose-500/10 border border-rose-500/20">
+                                        <svg class="w-5 h-5 text-rose-500" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                                        </svg>
+                                    </div>
+                                    <h3 class="text-xs font-black uppercase tracking-widest text-rose-500">Losses</h3>
                                 </div>
-                                <div class="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <p class="text-[10px] text-zinc-500 uppercase">Avg Loss</p>
-                                        <p class="text-sm font-mono font-bold text-danger"
-                                            x-text="detailedStats.loss.avg"></p>
-                                    </div>
-                                    <div>
-                                        <p class="text-[10px] text-zinc-500 uppercase">Worst Trade</p>
-                                        <p class="text-sm font-mono font-bold text-danger"
-                                            x-text="detailedStats.loss.worst">
-                                        </p>
-                                    </div>
+
+                                <div class="mb-6">
+                                    <p class="text-[10px] text-zinc-500 uppercase font-bold tracking-tighter mb-1">Trade
+                                        Count</p>
+                                    <p class="text-4xl font-black font-mono tracking-tighter"
+                                        :class="darkMode ? 'text-white' : 'text-zinc-900'"
+                                        x-text="detailedStats.loss.count"></p>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+                                <div>
+                                    <p class="text-[9px] text-zinc-500 uppercase font-bold mb-1">Avg Loss</p>
+                                    <p class="text-sm font-mono font-bold text-rose-500"
+                                        x-text="detailedStats.loss.avg"></p>
+                                </div>
+                                <div>
+                                    <p class="text-[9px] text-zinc-500 uppercase font-bold mb-1">Worst Trade</p>
+                                    <p class="text-sm font-mono font-bold text-rose-400"
+                                        x-text="detailedStats.loss.worst"></p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Timeframe Chart (Improved UI) -->
-                        <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                            class="p-6 rounded-xl border shadow-sm flex flex-col">
-                            <div class="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 class="text-sm font-bold" :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'">
-                                        Most
-                                        Used Timeframes</h3>
-                                </div>
-                                <div class="flex items-center gap-3 text-xs">
-                                    <div class="flex items-center gap-1">
-                                        <span class="w-2 h-2 rounded-full bg-blue-500"></span>
-                                        <span class="text-zinc-500">Intraday</span>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                                        <span class="text-zinc-500">Short</span>
-                                    </div>
-                                    <div class="flex items-center gap-1">
-                                        <span class="w-2 h-2 rounded-full bg-amber-400"></span>
-                                        <span class="text-zinc-500">Long</span>
-                                    </div>
-                                </div>
+                        <!-- Card: Timeframe Chart (Height-Matched) -->
+                        <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800 backdrop-blur-md shadow-xl' : 'bg-white border-zinc-200 shadow-sm'"
+                            class="p-6 rounded-3xl border flex flex-col h-full transition-all duration-500"
+                            x-data="{ activeBar: null }">
+
+                            <div class="mb-4">
+                                <h3 class="text-sm font-bold tracking-tight"
+                                    :class="darkMode ? 'text-zinc-100' : 'text-zinc-800'">Most Used</h3>
+                                <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-medium">Timeframe
+                                    Usage</p>
                             </div>
 
-                            <div class="flex-1 flex items-end justify-between gap-2 h-40">
-                                <template x-for="tf in timeframeData" :key="tf.label">
-                                    <div class="flex flex-col items-center gap-2 group w-full h-full justify-end relative"
-                                        :title="tf.label + ' — ' + tf.count + ' trades'">
-                                        <!-- Top badge showing count & percent -->
-                                        <div class="absolute -top-3 text-[10px] font-semibold px-2 py-0.5 rounded-full z-10"
-                                            :class="darkMode ? 'bg-black/60 text-zinc-200' : 'bg-white/90 text-zinc-800 shadow'">
-                                            <span x-text="tf.count"></span>
-                                            <span class="text-zinc-400"> / </span>
-                                            <span x-text="Math.round(tf.pct) + '%'"></span>
+                            <!-- Fixed Height Chart Area -->
+                            <div class="flex-1 flex items-end justify-between gap-2 min-h-[120px] relative pb-6">
+                                <template x-for="(tf, index) in timeframeData" :key="tf.label">
+                                    <div class="flex flex-col items-center flex-1 h-full justify-end relative"
+                                        @mouseenter="activeBar = index" @mouseleave="activeBar = null">
+
+                                        <!-- Tooltip (Absolute Positioned so it doesn't grow the card) -->
+                                        <div x-show="activeBar === index"
+                                            class="absolute bottom-full mb-2 z-20 px-2 py-1 rounded-lg text-[10px] font-bold shadow-xl border whitespace-nowrap"
+                                            :class="darkMode ? 'bg-zinc-800 border-zinc-700 text-white' : 'bg-white border-zinc-200 text-zinc-800'">
+                                            <span x-text="tf.count + ' trades'"></span>
                                         </div>
 
-                                        <!-- Bar container -->
-                                        <div class="w-full bg-zinc-100 dark:bg-zinc-800 rounded-t-md relative overflow-hidden transition-all duration-500 ease-out flex items-end"
-                                            :style="`height: ${Math.max(tf.pct, 5)}%`">
-                                            <!-- colored fill -->
-                                            <div class="w-full h-full transition-transform duration-700" :class="{
-                                                    'bg-gradient-to-t from-blue-600 to-blue-300': ['M1','M5','M15','1H'].includes(tf.label),
-                                                    'bg-gradient-to-t from-emerald-600 to-emerald-300': tf.label === '4H',
-                                                    'bg-gradient-to-t from-amber-600 to-amber-300': tf.label === 'D1'
-                                                }" style="border-radius: 0.375rem 0.375rem 0 0;">
+                                        <!-- Bar -->
+                                        <div class="w-full max-w-[24px] bg-zinc-100 dark:bg-zinc-800/50 rounded-full relative overflow-hidden transition-all duration-500 flex items-end shadow-inner"
+                                            :style="`height: ${Math.max(tf.pct, 15)}%`"
+                                            :class="activeBar === index ? 'ring-2 ring-indigo-500/20' : ''">
+
+                                            <div class="w-full h-full rounded-full transition-all duration-700" :class="{
+                                'bg-gradient-to-t from-blue-600 to-blue-400': ['M1','M5','M15','1H'].includes(tf.label),
+                                'bg-gradient-to-t from-emerald-600 to-emerald-400': tf.label === '4H',
+                                'bg-gradient-to-t from-amber-600 to-amber-400': tf.label === 'D1'
+                            }">
+                                                <div
+                                                    class="w-full h-full opacity-20 bg-[linear-gradient(45deg,transparent_25%,rgba(255,255,255,0.4)_50%,transparent_75%)] bg-[length:250%_250%] animate-[shimmer_4s_infinite_linear]">
+                                                </div>
                                             </div>
                                         </div>
 
                                         <!-- Label -->
-                                        <span class="text-[10px] font-bold text-zinc-500 mt-1"
-                                            :class="darkMode ? 'text-zinc-400' : 'text-zinc-600'"
+                                        <span
+                                            class="absolute top-full mt-1 text-[9px] font-black text-zinc-500 uppercase tracking-tighter"
                                             x-text="tf.label"></span>
-
-                                        <!-- hover detail panel -->
-                                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-[11px] shadow-2xl border z-50 opacity-0 pointer-events-none transition-opacity duration-150 group-hover:opacity-100 group-hover:pointer-events-auto"
-                                            :class="darkMode ? 'bg-zinc-950 border-zinc-800 text-zinc-200' : 'bg-white border-zinc-100 text-zinc-800'">
-                                            <div class="font-semibold" x-text="tf.label"></div>
-                                            <div class="text-zinc-500 text-xs">Trades: <span x-text="tf.count"></span>
-                                            </div>
-                                            <div class="text-zinc-500 text-xs">Relative: <span
-                                                    x-text="Math.round(tf.pct) + '%'"></span></div>
-                                        </div>
                                     </div>
                                 </template>
+                            </div>
 
-                                <div x-show="timeframeData.length === 0"
-                                    class="w-full text-center text-xs text-zinc-500 italic mt-8">No data</div>
+                            <!-- Legend -->
+                            <div
+                                class="mt-auto pt-4 border-t border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                                    <span
+                                        class="text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">Day</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                    <span
+                                        class="text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">Swing</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    <span
+                                        class="text-[9px] font-bold text-zinc-500 uppercase tracking-tighter">Macro</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                    <!-- NEW: Extended Metrics Grid -->
-                    <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                        class="p-6 rounded-xl border shadow-sm">
-                        <h3 class="text-lg font-bold mb-6 flex items-center gap-2"
-                            :class="darkMode ? 'text-white' : 'text-zinc-900'">
-                            <svg class="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
-                            Advanced Analytics
-                        </h3>
 
+                    <!-- NEW: Extended Metrics Grid -->
+                    <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800 backdrop-blur-md shadow-xl' : 'bg-white border-zinc-200 shadow-sm'"
+                        class="p-6 rounded-3xl border transition-all duration-500">
+
+                        <!-- Header -->
+                        <div class="flex items-center justify-between mb-8">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
+                                    <svg class="w-5 h-5 text-indigo-500" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 class="text-sm font-bold tracking-tight"
+                                        :class="darkMode ? 'text-zinc-100' : 'text-zinc-800'">
+                                        Advanced Analytics
+                                    </h3>
+                                    <p class="text-[10px] uppercase tracking-widest text-zinc-500 font-medium">
+                                        Performance Ratios</p>
+                                </div>
+                            </div>
+
+                            <!-- Status Badge -->
+                            <div x-show="trades.length > 0"
+                                class="text-[10px] px-3 py-1 rounded-lg border border-zinc-500/10 bg-zinc-500/5 text-zinc-500 font-bold uppercase tracking-tighter">
+                                Live Data
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
                         <template x-if="trades.length === 0">
-                            <div class="text-center text-zinc-500 py-8 text-sm italic">Log some trades to see advanced
-                                metrics.
+                            <div class="flex flex-col items-center justify-center py-12 border-2 border-dashed rounded-3xl"
+                                :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
+                                <p class="text-xs text-zinc-500 font-medium italic">Log trades to view analytics</p>
                             </div>
                         </template>
 
+                        <!-- Metrics Grid -->
                         <template x-if="trades.length > 0">
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                                 <template x-for="stat in extendedStats" :key="stat.label">
-                                    <div class="p-4 rounded-lg border transition hover:border-accent/30"
-                                        :class="darkMode ? 'bg-zinc-900/50 border-zinc-800' : 'bg-zinc-50 border-zinc-200'">
-                                        <p class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mb-1"
-                                            x-text="stat.label"></p>
-                                        <p class="text-xl font-bold font-mono"
-                                            :class="stat.class || (darkMode ? 'text-zinc-200' : 'text-zinc-800')"
-                                            x-text="stat.value"></p>
+                                    <div class="relative p-5 rounded-2xl border transition-all duration-300 overflow-hidden"
+                                        :class="darkMode ? 'bg-zinc-800/40 border-zinc-700/50' : 'bg-zinc-50 border-zinc-200'">
+
+                                        <!-- Subtle Corner Glow -->
+                                        <div class="absolute -right-4 -top-4 w-16 h-16 rounded-full blur-2xl opacity-[0.08]"
+                                            :class="stat.class ? 'bg-current' : 'bg-indigo-500'"></div>
+
+                                        <div class="relative z-10">
+                                            <p class="text-[10px] uppercase font-black text-zinc-500 tracking-widest mb-3"
+                                                x-text="stat.label"></p>
+
+                                            <div class="flex items-baseline gap-1">
+                                                <p class="text-2xl font-black font-mono tracking-tighter"
+                                                    :class="stat.class || (darkMode ? 'text-zinc-100' : 'text-zinc-900')"
+                                                    x-text="stat.value"></p>
+                                            </div>
+                                        </div>
+
+                                        <!-- Progress Decoration Line -->
+                                        <div class="absolute bottom-0 left-0 h-1 w-full opacity-20"
+                                            :class="stat.class ? 'bg-current' : 'bg-indigo-500'"></div>
                                     </div>
                                 </template>
                             </div>
                         </template>
                     </div>
+
                     <!-- Pair Analytics Section -->
                     <div class="space-y-4">
                         <div class="flex items-center justify-between">
@@ -1074,35 +1307,37 @@
 
                 <!-- JOURNAL -->
                 <section x-show="activeTab === 'journal'" x-transition.opacity.duration.300ms
-                    class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                    class="grid grid-cols-1 xl:grid-cols-12 gap-5"> <!-- Reduced gap from 8 to 5 -->
 
                     <!-- LEFT COLUMN: FORM (4 cols) -->
                     <div class="xl:col-span-4">
                         <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800 backdrop-blur-xl' : 'bg-white border-zinc-200 shadow-xl'"
-                            class="p-8 rounded-3xl border sticky top-6 transition-all duration-300">
+                            class="p-5 rounded-3xl border sticky top-6 transition-all duration-300">
+                            <!-- Reduced padding p-8 to p-5 -->
 
                             <!-- Header -->
-                            <div class="flex items-center justify-between mb-8">
+                            <div class="flex items-center justify-between mb-5"> <!-- Reduced mb-8 to mb-5 -->
                                 <div>
-                                    <h2 class="text-xl font-extrabold tracking-tight"
+                                    <h2 class="text-lg font-extrabold tracking-tight"
                                         :class="darkMode ? 'text-white' : 'text-zinc-900'">
                                         <span x-text="isEditing ? 'Edit Trade' : 'New Entry'"></span>
                                     </h2>
-                                    <p class="text-xs text-zinc-500 mt-1 font-medium">Capture your market psychology.
-                                    </p>
+                                    <p class="text-[10px] text-zinc-500 mt-0.5 font-medium">Capture your market
+                                        psychology.</p>
                                 </div>
                                 <button x-show="isEditing" @click="resetForm()"
-                                    class="px-3 py-1 text-xs font-bold text-rose-500 bg-rose-500/10 rounded-full hover:bg-rose-500/20 transition">
+                                    class="px-2.5 py-1 text-[10px] font-bold text-rose-500 bg-rose-500/10 rounded-full hover:bg-rose-500/20 transition">
                                     Cancel
                                 </button>
                             </div>
 
-                            <form @submit.prevent="saveTrade()" class="space-y-6">
+                            <form @submit.prevent="saveTrade()" class="space-y-4">
+                                <!-- Reduced space-y-6 to space-y-4 -->
                                 <!-- Instrument/Pair Search -->
-                                <div class="space-y-2" x-data="{
+                                <div class="space-y-1.5" x-data="{
                     search: '',
                     open: false,
-                    allPairs: ['EURUSD', 'GBPUSD', 'USDJPY', 'XAUUSD', 'BTCUSD', 'NAS100', 'SPX500', 'US30'],
+                    allPairs: ['EURUSD', 'GBPUSD', 'USDJPY', 'USDCHF', 'AUDUSD', 'USDCAD', 'NZDUSD', 'EURGBP', 'EURJPY', 'GBPJPY', 'EURCHF', 'CHFJPY', 'AUDJPY', 'CADJPY', 'NZDJPY', 'AUDNZD', 'AUDCHF', 'GBPCHF', 'CADCHF', 'EURAUD', 'EURCAD', 'EURNZD', 'GBPAUD', 'GBPCAD', 'GBPNZD', 'AUDCAD', 'NZDCAD', 'NZDCHF', 'USDTRY', 'EURTRY', 'USDMXN', 'USDZAR', 'USDHKD', 'USDSGD', 'USDTHB', 'USDSEK', 'USDDKK', 'USDNOK', 'USDKRW', 'USDCNH', 'USDCNY', 'USDINR', 'USDBRL', 'USDARS', 'USDCLP', 'USDPEN', 'USDCOP', 'USDRUB', 'USDILS', 'USDSAR', 'USDAED', 'USDQAR', 'USDKWD', 'USDPLN', 'EURPLN', 'USDHUF', 'EURHUF', 'USDCZK', 'EURCZK', 'USDRON', 'EURRON', 'USDPHP', 'USDIDR', 'USDMYR', 'GBPTRY', 'GBPPLN', 'GBPSGD', 'MXNJPY', 'ZARJPY', 'NOKJPY', 'XAUUSD', 'XAGUSD', 'XPDUSD', 'XPTUSD', 'WTIUSD', 'BRENTUSD', 'NAS100', 'SPX500', 'US30', 'US2000', 'UK100', 'GER40', 'FRA40', 'JPN225', 'BTCUSD', 'ETHUSD', 'BNBUSD', 'SOLUSD', 'XRPUSD', 'DOGEUSD', 'ADAUSD', 'TRXUSD', 'AVAXUSD', 'SHIBUSD', 'TONUSD', 'DOTUSD', 'LINKUSD', 'BCHUSD', 'NEARUSD', 'LTCUSD', 'ICPUSD', 'UNIUSD', 'STXUSD', 'FILUSD', 'ARBUSD', 'ETCUSD', 'IMXUSD', 'RENDERUSD', 'KASUSD', 'HBARUSD', 'OPUSD', 'TIAUSD', 'INJUSD', 'SUIUSD', 'PEPEUSD', 'FETUSD', 'AAVEUSD', 'TAOUSD', 'ENAUSD', 'LDOUSD', 'APTUSD', 'XLMUSD', 'XMRUSD', 'WIFUSD', 'BONKUSD', 'FLOKIUSD', 'JASMYUSD', 'ARUSD', 'PYTHUSD', 'STETHUSD', 'USDTUSD', 'USDCUSD', 'DAIUSD'],
                     get filteredPairs() {
                         if (this.search === '') return [];
                         return this.allPairs.filter(p => p.toLowerCase().includes(this.search.toLowerCase()));
@@ -1114,27 +1349,27 @@
                     }
                 }">
                                     <label
-                                        class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Instrument</label>
+                                        class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Instrument</label>
                                     <div class="relative group">
                                         <div
-                                            class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-accent">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-accent">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
                                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                                             </svg>
                                         </div>
                                         <input type="text" x-model="search" @focus="open = true" @input="open = true"
                                             placeholder="Search Pair..."
-                                            class="w-full pl-11 pr-4 py-3.5 rounded-2xl border-2 transition-all outline-none font-bold uppercase tracking-wider"
+                                            class="w-full pl-10 pr-4 py-2.5 rounded-xl border-2 transition-all outline-none font-bold uppercase tracking-wider text-sm"
                                             :class="darkMode ? 'bg-zinc-800/50 border-zinc-700/50 focus:border-accent text-white placeholder-zinc-600' : 'bg-zinc-50 border-zinc-100 focus:border-accent text-zinc-900 placeholder-zinc-400'">
 
-                                        <!-- Dropdown -->
                                         <div x-show="open && filteredPairs.length > 0" @click.away="open = false"
-                                            class="absolute z-50 w-full mt-2 rounded-2xl border shadow-2xl overflow-hidden backdrop-blur-xl"
+                                            class="absolute z-50 w-full mt-1.5 rounded-xl border shadow-2xl overflow-hidden backdrop-blur-xl"
                                             :class="darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'">
                                             <template x-for="pair in filteredPairs" :key="pair">
                                                 <div @click="selectPair(pair)"
-                                                    class="px-5 py-3 cursor-pointer hover:bg-accent hover:text-white transition-colors font-bold text-sm"
+                                                    class="px-4 py-2.5 cursor-pointer hover:bg-accent hover:text-white transition-colors font-bold text-xs"
                                                     :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'" x-text="pair">
                                                 </div>
                                             </template>
@@ -1143,55 +1378,52 @@
                                 </div>
 
                                 <!-- Metrics Grid -->
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div class="space-y-2">
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="space-y-1.5">
                                         <label
-                                            class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Risk
+                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Risk
                                             %</label>
                                         <input type="number" step="0.1" x-model="form.risk" :class="inputClass"
-                                            class="rounded-xl py-3 px-4 font-bold" placeholder="1.0">
+                                            class="rounded-xl py-2.5 px-3.5 font-bold text-sm" placeholder="1.0">
                                     </div>
-                                    <div class="space-y-2">
+                                    <div class="space-y-1.5">
                                         <label
-                                            class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Reward
+                                            class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Reward
                                             (RR)</label>
                                         <input type="number" step="0.1" x-model="form.rr" :class="inputClass"
-                                            class="rounded-xl py-3 px-4 font-bold" placeholder="2.5">
+                                            class="rounded-xl py-2.5 px-3.5 font-bold text-sm" placeholder="2.5">
                                     </div>
                                 </div>
 
                                 <!-- Outcome Segmented Control -->
-                                <div class="space-y-3">
+                                <div class="space-y-2">
                                     <label
-                                        class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Trade
+                                        class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1">Trade
                                         Outcome</label>
-                                    <div class="grid grid-cols-3 gap-2 p-1.5 rounded-2xl border"
+                                    <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl border"
                                         :class="darkMode ? 'bg-zinc-800/30 border-zinc-700' : 'bg-zinc-100 border-zinc-200'">
                                         <button type="button" @click="form.outcome='win'"
-                                            class="py-2.5 rounded-xl text-xs font-black transition-all"
+                                            class="py-1.5 rounded-lg text-[10px] font-black transition-all"
                                             :class="form.outcome==='win' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-400'">WIN</button>
                                         <button type="button" @click="form.outcome='loss'"
-                                            class="py-2.5 rounded-xl text-xs font-black transition-all"
+                                            class="py-1.5 rounded-lg text-[10px] font-black transition-all"
                                             :class="form.outcome==='loss' ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/30 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-400'">LOSS</button>
                                         <button type="button" @click="form.outcome='be'"
-                                            class="py-2.5 rounded-xl text-xs font-black transition-all"
+                                            class="py-1.5 rounded-lg text-[10px] font-black transition-all"
                                             :class="form.outcome==='be' ? 'bg-zinc-500 text-white shadow-lg shadow-zinc-500/30 scale-[1.02]' : 'text-zinc-500 hover:text-zinc-400'">B.E</button>
                                     </div>
                                 </div>
 
                                 <!-- Tags / Reasons -->
-                                <div class="space-y-3">
-                                    <div class="flex justify-between items-center">
-                                        <label
-                                            class="text-[11px] font-bold uppercase tracking-widest text-zinc-400 ml-1"
-                                            x-text="form.outcome === 'win' ? 'Confluences' : 'Mistakes'"></label>
-                                    </div>
-                                    <div class="flex flex-wrap gap-2">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-zinc-400 ml-1"
+                                        x-text="form.outcome === 'win' ? 'Confluences' : 'Mistakes'"></label>
+                                    <div class="flex flex-wrap gap-1.5">
                                         <template
                                             x-for="item in (form.outcome === 'win' ? activeAccount.config.profitConfluences : activeAccount.config.lossReasons)"
                                             :key="item">
                                             <button type="button" @click="toggleReason(item)"
-                                                class="px-4 py-2 text-[10px] font-bold rounded-xl border-2 transition-all active:scale-90"
+                                                class="px-3 py-1.5 text-[9px] font-bold rounded-lg border-2 transition-all active:scale-90"
                                                 :class="form.reasons.includes(item) 
                                     ? 'bg-accent border-accent text-white shadow-md' 
                                     : (darkMode ? 'bg-zinc-800 border-zinc-700 text-zinc-500 hover:border-zinc-500' : 'bg-white border-zinc-100 text-zinc-600 hover:border-zinc-300')">
@@ -1202,9 +1434,9 @@
                                 </div>
 
                                 <button type="submit"
-                                    class="w-full bg-accent hover:bg-accent/90 text-white font-black py-4 rounded-2xl shadow-xl shadow-accent/20 transition-all transform active:scale-95 flex items-center justify-center gap-2">
-                                    <span x-text="isEditing ? 'UPDATE POSITION' : 'SECURE LOG'"></span>
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    class="w-full bg-accent hover:bg-accent/90 text-white font-black py-3 rounded-xl shadow-lg shadow-accent/20 transition-all transform active:scale-95 flex items-center justify-center gap-2 text-sm">
+                                    <span x-text="isEditing ? 'UPDATE POSITION' : 'ADD TRADE'"></span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                                             d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
                                     </svg>
@@ -1219,31 +1451,32 @@
                             class="rounded-3xl border shadow-sm flex-1 flex flex-col overflow-hidden backdrop-blur-sm">
 
                             <!-- Table Header -->
-                            <div class="px-8 py-6 border-b flex justify-between items-center"
+                            <div class="px-6 py-4 border-b flex justify-between items-center"
                                 :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
                                 <div>
-                                    <h3 class="font-black text-lg tracking-tight"
+                                    <h3 class="font-black text-base tracking-tight"
                                         :class="darkMode ? 'text-white' : 'text-zinc-900'">Performance Log</h3>
-                                    <p class="text-xs text-zinc-500 font-medium"
+                                    <p class="text-[10px] text-zinc-500 font-medium"
                                         x-text="trades.length + ' Total executions analyzed'"></p>
                                 </div>
                                 <div class="flex gap-2">
                                     <div
-                                        class="bg-accent/10 text-accent px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tighter">
+                                        class="bg-accent/10 text-accent px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-tighter">
                                         Live Sync</div>
                                 </div>
                             </div>
 
                             <!-- Enhanced Table -->
                             <div class="overflow-auto flex-1 custom-scrollbar">
-                                <table class="w-full text-left border-separate border-spacing-y-2 px-4">
+                                <table class="w-full text-left border-separate border-spacing-y-1.5 px-4">
+                                    <!-- Reduced spacing-y-2 to 1.5 -->
                                     <thead class="sticky top-0 z-10">
-                                        <tr class="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500">
-                                            <th class="p-4">Instrument</th>
-                                            <th class="p-4 text-center">Setup</th>
-                                            <th class="p-4 text-center">Result</th>
-                                            <th class="p-4 text-right">Performance</th>
-                                            <th class="p-4 text-center w-24">Manage</th>
+                                        <tr class="text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-500">
+                                            <th class="px-4 py-2">Instrument</th>
+                                            <th class="px-4 py-2 text-center">Setup</th>
+                                            <th class="px-4 py-2 text-center">Result</th>
+                                            <th class="px-4 py-2 text-right">Performance</th>
+                                            <th class="px-4 py-2 text-center w-20">Manage</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -1251,34 +1484,34 @@
                                             <tr class="group transition-all duration-200 hover:translate-x-1"
                                                 :class="darkMode ? 'bg-zinc-800/30 hover:bg-zinc-800/60' : 'bg-zinc-50/50 hover:bg-zinc-100/80'">
 
-                                                <!-- Pair with Outcome Border -->
-                                                <td class="p-4 rounded-l-2xl border-l-4" :class="{
+                                                <td class="px-4 py-2.5 rounded-l-xl border-l-4" :class="{
                                         'border-emerald-500': trade.outcome === 'win',
                                         'border-rose-500': trade.outcome === 'loss',
                                         'border-zinc-500': trade.outcome === 'be'
                                     }">
                                                     <div class="flex flex-col">
-                                                        <span class="font-black text-sm tracking-wide"
+                                                        <span class="font-black text-xs tracking-wide"
                                                             :class="darkMode ? 'text-zinc-100' : 'text-zinc-800'"
                                                             x-text="trade.pair"></span>
-                                                        <span class="text-[10px] text-zinc-500 font-bold"
+                                                        <span class="text-[9px] text-zinc-500 font-bold"
                                                             x-text="trade.date"></span>
                                                     </div>
                                                 </td>
 
-                                                <td class="p-4 text-center">
+                                                <td class="px-4 py-2.5 text-center">
                                                     <div class="flex flex-col items-center">
                                                         <span
-                                                            class="text-xs font-bold px-2 py-0.5 rounded bg-zinc-500/10 text-zinc-500"
+                                                            class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-zinc-500/10 text-zinc-500"
                                                             x-text="trade.timeframe"></span>
-                                                        <span class="text-[9px] uppercase font-black text-zinc-400 mt-1"
+                                                        <span
+                                                            class="text-[8px] uppercase font-black text-zinc-400 mt-0.5"
                                                             x-text="trade.tradeType"></span>
                                                     </div>
                                                 </td>
 
-                                                <td class="p-4 text-center">
+                                                <td class="px-4 py-2.5 text-center">
                                                     <span
-                                                        class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border"
+                                                        class="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border"
                                                         :class="{
                                             'bg-emerald-500/10 text-emerald-500 border-emerald-500/20': trade.outcome === 'win',
                                             'bg-rose-500/10 text-rose-500 border-rose-500/20': trade.outcome === 'loss',
@@ -1287,20 +1520,20 @@
                                                     </span>
                                                 </td>
 
-                                                <td class="p-4 text-right">
-                                                    <div class="font-mono font-black text-sm"
+                                                <td class="px-4 py-2.5 text-right">
+                                                    <div class="font-mono font-black text-xs"
                                                         :class="getPnL(trade) >= 0 ? 'text-emerald-500' : 'text-rose-500'">
                                                         <span
                                                             x-text="(getPnL(trade) > 0 ? '+' : '') + getPnL(trade).toFixed(2) + '%'"></span>
                                                     </div>
                                                 </td>
 
-                                                <td class="p-4 rounded-r-2xl">
+                                                <td class="px-4 py-2.5 rounded-r-xl">
                                                     <div
                                                         class="flex justify-center items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                                         <button @click="editTrade(trade)"
-                                                            class="p-2 hover:bg-accent hover:text-white rounded-xl transition text-zinc-400">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                            class="p-1.5 hover:bg-accent hover:text-white rounded-lg transition text-zinc-400">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                                 viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round"
                                                                     stroke-width="2"
@@ -1309,8 +1542,8 @@
                                                             </svg>
                                                         </button>
                                                         <button @click="deleteTrade(trade.id)"
-                                                            class="p-2 hover:bg-rose-500 hover:text-white rounded-xl transition text-zinc-400">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                            class="p-1.5 hover:bg-rose-500 hover:text-white rounded-lg transition text-zinc-400">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor"
                                                                 viewBox="0 0 24 24">
                                                                 <path stroke-linecap="round" stroke-linejoin="round"
                                                                     stroke-width="2"
@@ -1349,267 +1582,205 @@
                 </style>
 
                 <!-- CALENDAR -->
-                <section x-show="activeTab === 'calendar'" x-transition.opacity.duration.300ms
-                    x-data="{ calendarMode: 'daily' }"> <!-- Local state for mode -->
+<section x-show="activeTab === 'calendar'" x-transition.opacity.duration.300ms x-data="{ calendarMode: 'daily' }">
+    <div :class="darkMode ? 'bg-zinc-900/50 border-zinc-800/50 backdrop-blur-xl' : 'bg-white border-zinc-200 shadow-sm'"
+         class="rounded-2xl border p-6 transition-all duration-300">
 
-                    <div :class="darkMode ? 'bg-dark-card border-dark-border' : 'bg-light-card border-light-border'"
-                        class="rounded-xl border shadow-sm p-6">
+        <!-- Header Section -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+            <!-- Left Side: Title -->
+            <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                <h2 class="text-2xl font-black tracking-tighter" :class="darkMode ? 'text-white' : 'text-zinc-900'"
+                    x-text="calendarMode === 'daily' ? calendarMonthLabel : currentMonth.getFullYear()">
+                </h2>
+                <div class="flex items-center gap-2 mt-1">
+                    <span class="relative flex h-2 w-2">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+                    </span>
+                    <p class="text-[10px] uppercase font-bold tracking-[0.2em] text-zinc-500"
+                       x-text="calendarMode === 'daily' ? 'Daily Performance' : 'Yearly Overview'"></p>
+                </div>
+            </div>
 
-                        <!-- Header Section -->
-                        <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-6 gap-4">
+            <!-- Right Side: Navigation & Toggles -->
+            <div class="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                <!-- Mode Toggle (Segmented Control) -->
+                <div class="inline-flex rounded-xl p-1 border shadow-inner"
+                    :class="darkMode ? 'bg-zinc-950 border-zinc-800' : 'bg-zinc-100 border-zinc-200'">
+                    <button @click="calendarMode = 'daily'"
+                        class="px-5 py-1.5 text-xs font-bold rounded-lg transition-all duration-300"
+                        :class="calendarMode === 'daily' 
+                            ? (darkMode ? 'bg-zinc-800 text-white shadow-lg' : 'bg-white text-zinc-900 shadow-sm') 
+                            : 'text-zinc-500 hover:text-zinc-400'">
+                        Daily
+                    </button>
+                    <button @click="calendarMode = 'monthly'"
+                        class="px-5 py-1.5 text-xs font-bold rounded-lg transition-all duration-300"
+                        :class="calendarMode === 'monthly' 
+                            ? (darkMode ? 'bg-zinc-800 text-white shadow-lg' : 'bg-white text-zinc-900 shadow-sm') 
+                            : 'text-zinc-500 hover:text-zinc-400'">
+                        Monthly
+                    </button>
+                </div>
 
-                            <!-- Left Side: Title & Mode Toggle -->
-                            <div class="flex flex-col gap-4">
-                                <!-- Mode Toggle Switch -->
+                <!-- Navigation Controls -->
+                <div class="flex items-center gap-1 bg-zinc-950/20 p-1 rounded-xl border border-zinc-800/50">
+                    <button @click="calendarMode === 'daily' ? changeMonth(-1) : changeYear(-1)"
+                        class="p-2 rounded-lg transition hover:bg-white/5 text-zinc-500 hover:text-white focus:outline-none">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                    </button>
 
+                    <button @click="currentMonth = new Date()"
+                        class="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition bg-accent text-white shadow-lg shadow-accent/20">
+                        <span x-text="calendarMode === 'daily' ? 'Today' : 'Present'"></span>
+                    </button>
 
-                                <!-- Dynamic Title -->
-                                <div>
-                                    <h2 class="text-xl font-bold" :class="darkMode ? 'text-white' : 'text-zinc-900'"
-                                        x-text="calendarMode === 'daily' ? calendarMonthLabel : currentMonth.getFullYear()">
-                                    </h2>
-                                    <p class="text-xs text-zinc-500"
-                                        x-text="calendarMode === 'daily' ? 'Daily Performance' : 'Yearly Overview'"></p>
-                                </div>
-                            </div>
-                            <div class="flex flex-row gap-4">
-                                <div class="inline-flex rounded-lg p-1 relative top-[5px] border self-start"
-                                    :class="darkMode ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-100 border-zinc-200'">
-                                    <button @click="calendarMode = 'daily'"
-                                        class="px-3 py-1 text-xs font-bold rounded-md transition-all duration-200"
-                                        :class="calendarMode === 'daily' 
-                            ? (darkMode ? 'bg-zinc-700 text-white shadow' : 'bg-white text-zinc-900 shadow') 
-                            : (darkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700')">
-                                        Daily
-                                    </button>
-                                    <button @click="calendarMode = 'monthly'"
-                                        class="px-3 py-1 text-xs font-bold rounded-md transition-all duration-200"
-                                        :class="calendarMode === 'monthly' 
-                            ? (darkMode ? 'bg-zinc-700 text-white shadow' : 'bg-white text-zinc-900 shadow') 
-                            : (darkMode ? 'text-zinc-500 hover:text-zinc-300' : 'text-zinc-500 hover:text-zinc-700')">
-                                        Monthly
-                                    </button>
-                                </div>
-                                <!-- Controls (Navigation) -->
-                                <div class="flex items-center space-x-1.5 bg-zinc-50 dark:bg-zinc-800 p-1.5 rounded-xl border"
-                                    :class="darkMode ? 'border-zinc-700' : 'border-zinc-200'">
+                    <button @click="calendarMode === 'daily' ? changeMonth(1) : changeYear(1)"
+                        class="p-2 rounded-lg transition hover:bg-white/5 text-zinc-500 hover:text-white focus:outline-none">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
 
-                                    <!-- Prev Button -->
-                                    <button @click="calendarMode === 'daily' ? changeMonth(-1) : changeYear(-1)"
-                                        class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 19l-7-7 7-7"></path>
-                                        </svg>
-                                    </button>
+        <!-- VIEW 1: DAILY CALENDAR -->
+        <div x-show="calendarMode === 'daily'" x-transition:enter.opacity.duration.500ms>
+            <div class="grid grid-cols-7 gap-2">
+                <!-- Headers -->
+                <template x-for="dayName in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" :key="dayName">
+                    <div class="pb-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500" x-text="dayName"></div>
+                </template>
 
-                                    <!-- Reset Button -->
-                                    <button @click="currentMonth = new Date()"
-                                        class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg transition bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-200 hover:bg-accent hover:text-white dark:hover:bg-accent shadow-sm">
-                                        <span x-text="calendarMode === 'daily' ? 'Today' : 'This Year'"></span>
-                                    </button>
-
-                                    <!-- Next Button -->
-                                    <button @click="calendarMode === 'daily' ? changeMonth(1) : changeYear(1)"
-                                        class="flex items-center justify-center w-8 h-8 rounded-lg transition hover:bg-zinc-100 dark:hover:bg-zinc-700 text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-accent">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7"></path>
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- VIEW 1: DAILY CALENDAR (Your Original Grid) -->
-                        <div x-show="calendarMode === 'daily'" x-transition:enter.opacity.duration.300ms>
-                            <div class="grid grid-cols-7 gap-px rounded-xl border relative z-0"
-                                :class="darkMode ? 'bg-zinc-800 border-zinc-800' : 'bg-zinc-200 border-zinc-200'">
-
-                                <!-- Headers -->
-                                <template x-for="dayName in ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']"
-                                    :key="dayName">
-                                    <div class="p-3 text-center text-[10px] font-bold uppercase tracking-widest first:rounded-tl-xl last:rounded-tr-xl"
-                                        :class="darkMode ? 'bg-black text-zinc-500' : 'bg-zinc-50 text-zinc-500'"
-                                        x-text="dayName">
-                                    </div>
-                                </template>
-
-                                <!-- Days Loop -->
-                                <template x-for="(item, index) in calendarGrid" :key="item.key">
-                                    <div class="min-h-[100px] p-2 flex flex-col justify-between relative group calendar-day transition-colors duration-200"
-                                        @click="openDayModal(item)" :class="[
-                            'border-b border-r',
-                            darkMode ? 'border-zinc-800' : 'border-zinc-200',
-                            item.hasTrades ? 'cursor-pointer' : 'cursor-default',
-                            !item.isCurrentMonth ? (darkMode ? 'bg-zinc-900/50 opacity-40' : 'bg-zinc-100 opacity-60') : '',
+                <!-- Days Loop -->
+                <template x-for="(item, index) in calendarGrid" :key="item.key">
+                    <div @click="openDayModal(item)" 
+                        class="min-h-[110px] p-3 flex flex-col justify-between relative group rounded-xl border transition-all duration-300"
+                        :class="[
+                            item.hasTrades ? 'cursor-pointer hover:-translate-y-1 hover:shadow-xl' : 'cursor-default',
+                            !item.isCurrentMonth ? (darkMode ? 'opacity-20 pointer-events-none' : 'opacity-30 pointer-events-none') : '',
                             (item.pnl === maxMonthlyPnl && item.pnl > 0) 
-                                ? (darkMode ? 'best-day-dark gradient-animated shadow-inner font-bold' : 'best-day-light gradient-animated shadow-inner font-bold')
-                                : (item.hasTrades ? getDayColorClass(item) : (darkMode ? 'bg-dark-card hover:bg-zinc-800' : 'bg-white hover:bg-zinc-50')),
-                            isToday(item.dateStr) && !item.hasTrades ? (darkMode ? 'ring-1 ring-inset ring-white/20' : 'bg-blue-50') : ''
+                                ? 'bg-gradient-to-br from-emerald-500/20 to-emerald-900/40 border-emerald-500/50 shadow-[inset_0_0_20px_rgba(16,185,129,0.1)]'
+                                : (item.hasTrades ? getDayColorClass(item) : (darkMode ? 'bg-zinc-950/30 border-zinc-800/50 hover:bg-zinc-800/50' : 'bg-zinc-50 border-zinc-200 hover:bg-zinc-100')),
+                            isToday(item.dateStr) && !item.hasTrades ? (darkMode ? 'ring-2 ring-accent ring-offset-2 ring-offset-zinc-900' : 'ring-2 ring-accent ring-offset-2') : ''
                         ]">
 
-                                        <div class="flex justify-between items-start">
-                                            <span class="text-xs font-medium" :class="[
-                                (item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : (item.hasTrades ? getTextContrastColor(item) : (darkMode ? 'text-zinc-500' : 'text-zinc-400')),
-                                isToday(item.dateStr) && !item.hasTrades ? 'text-accent font-bold' : ''
-                            ]" x-text="item.dayNum"></span>
-                                            <template x-if="item.pnl === maxMonthlyPnl && item.pnl > 0">
-                                                <span class="text-[10px] scale-125">🏆</span>
-                                            </template>
-                                        </div>
-
-                                        <template x-if="item.hasTrades">
-                                            <div class="text-right mt-auto">
-                                                <div class="font-bold text-sm"
-                                                    :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
-                                                    x-text="(item.pnl > 0 ? '+' : '') + item.pnl.toFixed(1) + '%'">
-                                                </div>
-                                                <div class="text-[10px] opacity-80"
-                                                    :class="(item.pnl === maxMonthlyPnl && item.pnl > 0) ? 'text-inherit' : getTextContrastColor(item)"
-                                                    x-text="item.count + ' trades'"></div>
-                                            </div>
-                                        </template>
-
-                                        <!-- Tooltip -->
-                                        <div class="tooltip absolute bottom-full mb-2 rounded-lg shadow-xl border p-3 z-[40] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none w-32"
-                                            :class="[
-                                darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200',
-                                (index % 7 === 0 || index % 7 === 1) ? 'left-0 origin-bottom-left' : 
-                                (index % 7 === 5 || index % 7 === 6) ? 'right-0 origin-bottom-right' : 
-                                'left-1/2 -translate-x-1/2 origin-bottom'
-                            ]" x-show="item.hasTrades">
-                                            <div class="text-xs font-bold mb-1 pb-1 border-b"
-                                                :class="darkMode ? 'text-white border-zinc-800' : 'text-black border-zinc-100'">
-                                                <div class="flex justify-between">
-                                                    <span x-text="item.dateStr"></span>
-                                                    <span :class="item.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                                                        x-text="(item.pnl>0?'+':'') + item.pnl.toFixed(1) + '%'"></span>
-                                                </div>
-                                            </div>
-                                            <div class="text-[10px] text-center italic mt-1"
-                                                :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
-                                                <span x-text="item.count"></span> trades<br>Click to details
-                                            </div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
+                        <div class="flex justify-between items-start">
+                            <span class="text-xs font-bold" :class="(item.hasTrades ? getTextContrastColor(item) : 'text-zinc-500')" x-text="item.dayNum"></span>
+                            <template x-if="item.pnl === maxMonthlyPnl && item.pnl > 0">
+                                <span class="text-xs animate-bounce">🏆</span>
+                            </template>
                         </div>
 
-                        <!-- VIEW 2: MONTHLY OVERVIEW (New Feature) -->
-                        <div x-show="calendarMode === 'monthly'" x-transition:enter.opacity.duration.300ms
-                            style="display: none;">
-                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                <!-- Loop 0-11 for Months -->
-                                <template x-for="(monthData, mIndex) in getYearlyGrid()" :key="mIndex">
-                                    <div @click="currentMonth = new Date(currentMonth.getFullYear(), mIndex, 1); calendarMode = 'daily'"
-                                        class="rounded-xl border p-4 flex flex-col justify-between h-[120px] cursor-pointer transition-all hover:scale-[1.02] active:scale-[0.98]"
-                                        :class="[
-                             darkMode ? 'bg-dark-card border-zinc-700 hover:border-zinc-500' : 'bg-white border-zinc-200 hover:border-zinc-400 shadow-sm',
-                             monthData.isCurrent ? (darkMode ? 'ring-1 ring-accent' : 'ring-2 ring-accent') : ''
-                         ]">
+                        <template x-if="item.hasTrades">
+                            <div class="mt-auto">
+                                <div class="font-black text-sm tracking-tighter" :class="getTextContrastColor(item)"
+                                    x-text="(item.pnl > 0 ? '+' : '') + item.pnl.toFixed(1) + '%'">
+                                </div>
+                                <div class="text-[9px] font-bold uppercase tracking-wider opacity-70" :class="getTextContrastColor(item)"
+                                    x-text="item.count + ' trades'"></div>
+                            </div>
+                        </template>
 
-                                        <!-- Month Name & Year -->
-                                        <div class="flex justify-between items-start">
-                                            <span class="text-lg font-bold uppercase tracking-wider"
-                                                :class="darkMode ? 'text-zinc-300' : 'text-zinc-700'"
-                                                x-text="monthData.name"></span>
-                                            <span class="text-[10px] opacity-50"
-                                                x-text="currentMonth.getFullYear()"></span>
-                                        </div>
-
-                                        <!-- Stats -->
-                                        <div class="mt-auto">
-                                            <template x-if="monthData.count > 0">
-                                                <div>
-                                                    <div class="text-2xl font-mono font-bold"
-                                                        :class="monthData.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                                                        x-text="(monthData.pnl > 0 ? '+' : '') + monthData.pnl.toFixed(1) + '%'">
-                                                    </div>
-                                                    <div class="text-xs opacity-60"
-                                                        :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'"
-                                                        x-text="monthData.count + ' trades'">
-                                                    </div>
-                                                </div>
-                                            </template>
-                                            <template x-if="monthData.count === 0">
-                                                <div class="text-sm italic opacity-30"
-                                                    :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'">
-                                                    No Data
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </template>
+                        <!-- Enhanced Tooltip -->
+                        <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-32 p-2 rounded-lg border shadow-2xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-50 backdrop-blur-md"
+                             :class="darkMode ? 'bg-zinc-900/90 border-zinc-700' : 'bg-white/90 border-zinc-200'" x-show="item.hasTrades">
+                            <div class="text-[9px] font-black uppercase text-zinc-500 border-b border-zinc-800 pb-1 mb-1" x-text="item.dateStr"></div>
+                            <div class="text-[10px] font-bold" :class="item.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'">
+                                Total: <span x-text="(item.pnl>0?'+':'') + item.pnl.toFixed(1) + '%'"></span>
                             </div>
                         </div>
-
-                        <!-- Trade Details Modal (Kept same as original) -->
-                        <div x-show="modalOpen" style="display: none;"
-                            class="fixed inset-0 z-[100] flex items-center justify-center px-4 sm:px-0" x-transition>
-                            <!-- Backdrop -->
-                            <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" @click="modalOpen = false"></div>
-                            <!-- Modal -->
-                            <div class="relative transform rounded-xl shadow-2xl transition-all sm:w-full sm:max-w-lg overflow-hidden border"
-                                :class="darkMode ? 'bg-zinc-900 border-zinc-700' : 'bg-white border-zinc-200'">
-                                <template x-if="selectedDay">
-                                    <div>
-                                        <div class="flex items-center justify-between px-4 py-3 border-b"
-                                            :class="darkMode ? 'border-zinc-800' : 'border-zinc-100'">
-                                            <div>
-                                                <h3 class="text-lg font-bold"
-                                                    :class="darkMode ? 'text-white' : 'text-zinc-900'"
-                                                    x-text="selectedDay.dateStr"></h3>
-                                                <p class="text-xs"
-                                                    :class="darkMode ? 'text-zinc-400' : 'text-zinc-500'">
-                                                    Daily PnL: <span
-                                                        :class="selectedDay.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                                                        x-text="(selectedDay.pnl > 0 ? '+' : '') + selectedDay.pnl.toFixed(2) + '%'"></span>
-                                                </p>
-                                            </div>
-                                            <button @click="modalOpen = false"
-                                                class="p-1 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-800">
-                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                                                    stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                        <div
-                                            class="px-4 py-2 max-h-[60vh] overflow-y-auto custom-scrollbar space-y-2 mt-2">
-                                            <template x-for="t in getTradesForDate(selectedDay.dateStr)" :key="t.id">
-                                                <div class="flex items-center justify-between p-3 rounded-lg border"
-                                                    :class="darkMode ? 'bg-zinc-800/50 border-zinc-700/50' : 'bg-zinc-50 border-zinc-100'">
-                                                    <div class="flex flex-col">
-                                                        <div class="flex items-center gap-2">
-                                                            <span class="font-bold text-sm"
-                                                                :class="darkMode ? 'text-zinc-200' : 'text-zinc-800'"
-                                                                x-text="t.pair"></span>
-                                                            <span
-                                                                class="text-[10px] px-1.5 py-0.5 rounded uppercase font-bold"
-                                                                :class="t.direction === 'Long' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
-                                                                x-text="t.direction"></span>
-                                                        </div>
-                                                        <span class="text-[10px]"
-                                                            :class="darkMode ? 'text-zinc-500' : 'text-zinc-400'"
-                                                            x-text="t.time || '00:00'"></span>
-                                                    </div>
-                                                    <div class="font-mono font-bold text-sm"
-                                                        :class="getPnL(t) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
-                                                        x-text="(getPnL(t) > 0 ? '+' : '') + getPnL(t).toFixed(2) + '%'">
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-
                     </div>
-                </section>
+                </template>
+            </div>
+        </div>
+
+        <!-- VIEW 2: MONTHLY OVERVIEW -->
+        <div x-show="calendarMode === 'monthly'" x-transition:enter.opacity.duration.500ms style="display: none;">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <template x-for="(monthData, mIndex) in getYearlyGrid()" :key="mIndex">
+                    <div @click="currentMonth = new Date(currentMonth.getFullYear(), mIndex, 1); calendarMode = 'daily'"
+                        class="group rounded-2xl border p-5 flex flex-col justify-between h-36 cursor-pointer transition-all duration-300 hover:-translate-y-1"
+                        :class="[
+                             darkMode ? 'bg-zinc-950/40 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900/60' : 'bg-white border-zinc-200 hover:shadow-lg',
+                             monthData.isCurrent ? 'ring-2 ring-accent' : ''
+                         ]">
+                        
+                        <div class="flex justify-between items-start">
+                            <span class="text-sm font-black uppercase tracking-[0.2em] text-zinc-500 group-hover:text-zinc-200 transition-colors" x-text="monthData.name"></span>
+                            <div class="w-2 h-2 rounded-full" :class="monthData.count > 0 ? (monthData.pnl >= 0 ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#f43f5e]') : 'bg-zinc-800'"></div>
+                        </div>
+
+                        <div class="mt-auto">
+                            <template x-if="monthData.count > 0">
+                                <div>
+                                    <div class="text-2xl font-black tracking-tighter" :class="monthData.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                        x-text="(monthData.pnl > 0 ? '+' : '') + monthData.pnl.toFixed(1) + '%'"></div>
+                                    <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest" x-text="monthData.count + ' trades logged'"></div>
+                                </div>
+                            </template>
+                            <template x-if="monthData.count === 0">
+                                <div class="text-[10px] font-bold text-zinc-700 uppercase tracking-widest italic">No activity recorded</div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Trade Details -->
+    <div x-show="modalOpen" class="fixed inset-0 z-[100] flex items-center justify-center p-4" x-transition>
+        <div class="fixed inset-0 bg-zinc-950/80 backdrop-blur-md" @click="modalOpen = false"></div>
+        <div class="relative w-full max-w-lg overflow-hidden rounded-3xl border shadow-2xl transition-all"
+             :class="darkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-white border-zinc-200'">
+            
+            <template x-if="selectedDay">
+                <div class="flex flex-col">
+                    <div class="p-6 border-b" :class="darkMode ? 'border-zinc-800 bg-zinc-950/30' : 'border-zinc-100 bg-zinc-50/50'">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-xl font-black tracking-tight" :class="darkMode ? 'text-white' : 'text-zinc-900'" x-text="selectedDay.dateStr"></h3>
+                                <p class="text-xs font-bold uppercase tracking-widest text-zinc-500">Daily Trade Recap</p>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-2xl font-black tracking-tighter" :class="selectedDay.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                    x-text="(selectedDay.pnl > 0 ? '+' : '') + selectedDay.pnl.toFixed(2) + '%'"></div>
+                                <div class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest" x-text="selectedDay.count + ' total trades'"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 max-h-[50vh] overflow-y-auto space-y-3 custom-scrollbar">
+                        <template x-for="t in getTradesForDate(selectedDay.dateStr)" :key="t.id">
+                            <div class="group flex items-center justify-between p-4 rounded-2xl border transition-all hover:border-zinc-500"
+                                :class="darkMode ? 'bg-zinc-800/50 border-zinc-700/50' : 'bg-zinc-50 border-zinc-200'">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-1 h-10 rounded-full" :class="t.direction === 'Long' ? 'bg-emerald-500' : 'bg-rose-500'"></div>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-black text-sm" x-text="t.pair"></span>
+                                            <span class="text-[9px] px-1.5 py-0.5 rounded font-black uppercase tracking-tighter"
+                                                :class="t.direction === 'Long' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'"
+                                                x-text="t.direction"></span>
+                                        </div>
+                                        <p class="text-[10px] font-bold text-zinc-500" x-text="t.time || 'Market Entry'"></p>
+                                    </div>
+                                </div>
+                                <div class="text-right font-mono font-black text-sm" :class="getPnL(t) >= 0 ? 'text-emerald-500' : 'text-rose-500'"
+                                    x-text="(getPnL(t) > 0 ? '+' : '') + getPnL(t).toFixed(2) + '%'"></div>
+                            </div>
+                        </template>
+                    </div>
+                    
+                    <button @click="modalOpen = false" class="m-6 mt-0 py-3 rounded-xl font-bold text-xs uppercase tracking-widest transition-all bg-zinc-800 text-zinc-300 hover:bg-zinc-700">
+                        Close Overview
+                    </button>
+                </div>
+            </template>
+        </div>
+    </div>
+</section>
 
                 <!-- SETTINGS -->
                 <section x-show="activeTab === 'settings'" x-transition.opacity.duration.300ms class="space-y-6">
@@ -2327,17 +2498,70 @@
 
                 // --- Statistics ---
                 get dashboardStats() {
-                    const total = this.trades.length;
-                    const wins = this.trades.filter(t => t.outcome === 'win').length;
-                    const winRate = total ? ((wins / total) * 100).toFixed(1) : 0;
-                    const netPnL = this.trades.reduce((acc, t) => acc + this.getPnL(t), 0).toFixed(2);
+                    const trades = this.trades;
+                    const total = trades.length;
+
+                    // Helper to calculate metrics for a specific slice of trades
+                    const getMetrics = (tradeSubset) => {
+                        if (tradeSubset.length === 0) return { winRate: 0, pnl: 0, rr: 0 };
+                        const wins = tradeSubset.filter(t => t.outcome === 'win').length;
+                        const pnl = tradeSubset.reduce((acc, t) => acc + (parseFloat(this.getPnL(t)) || 0), 0);
+                        const rr = tradeSubset.reduce((acc, t) => acc + (parseFloat(t.rr) || 0), 0) / tradeSubset.length;
+                        return { winRate: (wins / tradeSubset.length) * 100, pnl, rr };
+                    };
+
+                    // Overall Metrics
+                    const current = getMetrics(trades);
+
+                    // Trend Logic: Compare last 5 trades vs the 5 trades before them
+                    const recentTrades = trades.slice(-5);
+                    const previousTrades = trades.slice(-10, -5);
+
+                    const recentMetrics = getMetrics(recentTrades);
+                    const previousMetrics = getMetrics(previousTrades);
+
+                    // Calculate percentage change for trends
+                    const calcTrend = (now, prev) => {
+                        if (prev === 0 || !prev) return 0;
+                        return parseFloat(((now - prev) / Math.abs(prev)) * 100).toFixed(1);
+                    };
 
                     return [
-                        { label: 'Total Trades', value: total },
-                        { label: 'Win Rate', value: winRate + '%', colorClass: winRate >= 50 ? 'text-success' : 'text-danger' },
-                        { label: 'Net Profit', value: (netPnL > 0 ? '+' : '') + netPnL + '%', colorClass: netPnL >= 0 ? 'text-success' : 'text-danger' },
-                        { label: 'Avg Risk', value: (this.trades.reduce((a, t) => a + (t.risk || 0), 0) / (total || 1)).toFixed(2) + '%' },
-                        { label: 'Avg R:R', value: (this.trades.reduce((a, t) => a + (t.rr || 0), 0) / (total || 1)).toFixed(2) + 'R' },
+                        {
+                            label: 'Total Trades',
+                            value: total,
+                            trend: null,
+                            subtext: 'Lifetime entries',
+                            colorClass: this.darkMode ? 'text-white' : 'text-zinc-900'
+                        },
+                        {
+                            label: 'Win Rate',
+                            value: current.winRate.toFixed(1) + '%',
+                            trend: calcTrend(recentMetrics.winRate, previousMetrics.winRate),
+                            subtext: `Recent: ${recentMetrics.winRate.toFixed(0)}%`,
+                            colorClass: current.winRate >= 50 ? 'text-emerald-500' : 'text-rose-500'
+                        },
+                        {
+                            label: 'Net Profit',
+                            value: (current.pnl > 0 ? '+' : '') + current.pnl.toFixed(2) + '%',
+                            trend: calcTrend(recentMetrics.pnl, previousMetrics.pnl),
+                            subtext: 'Total account growth',
+                            colorClass: current.pnl >= 0 ? 'text-emerald-500' : 'text-rose-500'
+                        },
+                        {
+                            label: 'Avg Risk',
+                            value: (trades.reduce((a, t) => a + (parseFloat(t.risk) || 0), 0) / (total || 1)).toFixed(2) + '%',
+                            trend: null,
+                            subtext: 'Avg risk per setup',
+                            colorClass: this.darkMode ? 'text-white' : 'text-zinc-900'
+                        },
+                        {
+                            label: 'Avg R:R',
+                            value: (trades.reduce((a, t) => a + (parseFloat(t.rr) || 0), 0) / (total || 1)).toFixed(2) + 'R',
+                            trend: calcTrend(recentMetrics.rr, previousMetrics.rr),
+                            subtext: 'Reward to Risk ratio',
+                            colorClass: this.darkMode ? 'text-white' : 'text-zinc-900'
+                        }
                     ];
                 },
 
